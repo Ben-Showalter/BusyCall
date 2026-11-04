@@ -209,9 +209,10 @@ The full key table is `PLAN.md §3.1`. In code:
 ## 7. Contacts
 
 - Read the phone's contacts through upstream's `Contact.kt` (via `bridge/`).
-  Ask for `READ_CONTACTS` at first use, with a toast giving the D-pad path if
-  it's refused (guide §5). Without permission, the app still works with typed
-  numbers and shows "Contacts are off — Options › Allow contacts".
+  Ask for `READ_CONTACTS` **and** `WRITE_CONTACTS` at first use (upstream's
+  `Config` falls back to its own list unless both are granted), with a toast
+  giving the D-pad path if it's refused (guide §5). Without permission, the app
+  still works with typed numbers and shows "Contacts are off — Options › Allow contacts".
 - Match incoming numbers to contacts for the caller name.
 - The Contacts list is short-to-medium and scrolled with the D-pad; 2–9 jump to
   the first name starting with that key's letters.

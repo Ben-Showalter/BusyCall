@@ -44,7 +44,23 @@ data class RecentUi(
     val missed: Boolean,
     /** When the call happened, epoch millis; null if unknown. */
     val timeMillis: Long?,
+    /** When it was answered (null if never) and when it ended: together they identify the entry to delete. */
+    val startMillis: Long? = null,
+    val stopMillis: Long = 0L,
 )
+
+/** One of a contact's numbers or SIP addresses. */
+data class ContactNumberUi(
+    /** The phone's label for it ("Mobile", "Work"), or empty. */
+    val label: String,
+    /** What to dial: `tel:+15550198` or `sip:anna@pbx`. */
+    val uri: String,
+    /** How to show it: "+15550198" or "anna@pbx". */
+    val display: String,
+)
+
+/** One contact, display-ready. */
+data class ContactUi(val name: String, val numbers: List<ContactNumberUi>)
 
 /** A call's state, as the screens show it. */
 enum class CallState {
@@ -155,6 +171,27 @@ interface Bridge {
     fun resume(callId: Long)
     /** Stops the ringtone of an incoming call without declining it. */
     fun silenceRinger()
+
+    // ---- Contacts and call log (upstream's Contact and CallHistory) ----
+
+    /** True when the phone's contacts are being read (upstream's contacts mode isn't "baresip"). */
+    fun contactsOn(): Boolean
+
+    /**
+     * Starts reading the phone's contacts. If READ_CONTACTS / WRITE_CONTACTS are missing, asks for
+     * them (request code [CONTACTS_REQUEST]) and returns false; the screen calls again on the result.
+     */
+    fun turnContactsOn(activity: Activity): Boolean
+
+    /** Contacts, sorted by name (favourites first, as upstream sorts them). */
+    fun contacts(): List<ContactUi>
+
+    /** Deletes one call-log entry. */
+    fun deleteRecent(recent: RecentUi)
+
+    companion object {
+        const val CONTACTS_REQUEST = 4202
+    }
 }
 
 object Bridges {

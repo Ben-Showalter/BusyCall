@@ -15,6 +15,8 @@ import com.busycall.app.bridge.CallDirection
 import com.busycall.app.bridge.NumberStatus
 import com.busycall.app.bridge.PlaceResult
 import com.busycall.app.call.InCallActivity
+import com.busycall.app.calllog.CallLogActivity
+import com.busycall.app.contacts.ContactsActivity
 import com.busycall.app.dialer.DialerActivity
 import com.busycall.app.numbers.NumbersActivity
 import com.busycall.app.settings.SettingsActivity
@@ -93,6 +95,8 @@ class HomeActivity : FlipBaseActivity() {
     }
 
     override fun optionsItems(): List<MenuItem> = listOf(
+        MenuItem(getString(R.string.bc_menu_contacts)) { startActivity(Intent(this, ContactsActivity::class.java)) },
+        MenuItem(getString(R.string.bc_menu_calllog)) { startActivity(Intent(this, CallLogActivity::class.java)) },
         MenuItem(getString(R.string.bc_menu_numbers)) { startActivity(Intent(this, NumbersActivity::class.java)) },
         MenuItem(getString(R.string.bc_menu_classic)) { Bridges.current.openClassicScreens(this) },
         MenuItem(getString(R.string.bc_menu_settings)) { startActivity(Intent(this, SettingsActivity::class.java)) },

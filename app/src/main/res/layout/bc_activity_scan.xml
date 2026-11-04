@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Scan QR setup code (PLAN.md §5.1): camera preview, one status line, Scan again / Retry. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bc_background"
+    android:orientation="vertical">
+
+    <include layout="@layout/bc_titlebar" />
+
+    <SurfaceView
+        android:id="@+id/bc_scan_preview"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clickable="true"
+        android:focusable="false" />
+
+    <!-- Fixed height so the preview doesn't jump when the message changes (guide §4). -->
+    <TextView
+        android:id="@+id/bc_scan_status"
+        style="@style/BcText"
+        android:layout_width="match_parent"
+        android:layout_height="58dp"
+        android:ellipsize="end"
+        android:gravity="center_vertical"
+        android:maxLines="3"
+        android:paddingStart="@dimen/bc_gutter"
+        android:paddingEnd="@dimen/bc_gutter"
+        android:textSize="@dimen/bc_text_label" />
+
+    <TextView
+        android:id="@+id/bc_scan_again"
+        style="@style/BcButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/bc_gutter"
+        android:layout_marginEnd="@dimen/bc_gutter"
+        android:layout_marginBottom="4dp"
+        android:stateListAnimator="@null"
+        android:text="@string/bc_scan_again" />
+
+    <include layout="@layout/bc_footer" />
+</LinearLayout>

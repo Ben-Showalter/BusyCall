@@ -18,6 +18,8 @@ import com.tutpro.baresip.BlockRule
 import com.tutpro.baresip.Blocked
 import com.tutpro.baresip.Call
 import com.tutpro.baresip.CallHistory
+import com.tutpro.baresip.Config
+import com.tutpro.baresip.Contact
 import com.tutpro.baresip.Message
 import com.tutpro.baresip.REGISTRATION_INTERVAL
 import com.tutpro.baresip.UserAgent
@@ -125,6 +127,8 @@ object BaresipBridge : Bridge {
                 direction = if (incoming) CallDirection.In else CallDirection.Out,
                 missed = incoming && h.startTime == null,
                 timeMillis = (h.startTime ?: h.stopTime).timeInMillis,
+                startMillis = h.startTime?.timeInMillis,
+                stopMillis = h.stopTime.timeInMillis,
             )
         }
     }
@@ -366,6 +370,56 @@ object BaresipBridge : Bridge {
 
     override fun silenceRinger() {
         BaresipService.rt?.stop()
+    }
+
+    // ---- Contacts and call log ----
+
+    private val contactsPermissions = arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS)
+
+    override fun contactsOn(): Boolean = BaresipService.contactsMode != "baresip"
+
+    override fun turnContactsOn(activity: Activity): Boolean {
+        // Upstream's Config falls back to its own list unless both are granted (Config.initialize).
+        if (!Utils.checkPermissions(activity, contactsPermissions)) {
+            activity.requestPermissions(contactsPermissions, Bridge.CONTACTS_REQUEST)
+            return false
+        }
+        if (!Config.isInitialized()) return false
+        if (BaresipService.contactsMode == "both") return true
+        // Exactly upstream's ContactsScreen.setContactsMode("both").
+        Config.replaceVariable("contacts_mode", "both")
+        BaresipService.contactsMode = "both"
+        Contact.restoreBaresipContacts()
+        Contact.loadAndroidContacts(activity)
+        Contact.contactsUpdate()
+        Config.save()
+        val intent = Intent(activity, BaresipService::class.java)
+        intent.action = "Start Content Observer"
+        try {
+            if (isRunning()) activity.startService(intent) else activity.startForegroundService(intent)
+        } catch (e: Exception) {
+            Log.e(TAG, "Content observer start failed: ${e.javaClass.simpleName}")
+        }
+        return true
+    }
+
+    override fun contacts(): List<ContactUi> = BaresipService.contacts.toList().map { c ->
+        ContactUi(
+            name = c.name(),
+            numbers = c.uris().map { u ->
+                ContactNumberUi(label = u.label, uri = u.uri, display = u.uri.substringAfter(":"))
+            },
+        )
+    }
+
+    override fun deleteRecent(recent: RecentUi) {
+        val entry = synchronized(BaresipService.callHistory) {
+            BaresipService.callHistory.firstOrNull {
+                it.aor == recent.numberId && it.peerUri == recent.peerUri &&
+                    it.stopTime.timeInMillis == recent.stopMillis && it.startTime?.timeInMillis == recent.startMillis
+            }
+        } ?: return
+        CallHistory.remove(entry.startTime, entry.stopTime)
     }
 
     override fun openClassicScreens(activity: Activity, dial: String?) {

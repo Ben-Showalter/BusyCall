@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Dialer (PLAN.md S2, basic). The number is a display, not a text field: digits come from
-     the keypad through FlipBaseActivity, so no keyboard session ever starts. -->
+<!-- Dialer (PLAN.md S2). The number is a display, not a text field: digits come from the keypad
+     through FlipBaseActivity, so no keyboard session ever starts. It takes focus (OK = Call) so
+     ▼ moves into the contact matches below it (PLAN §3.3). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -39,9 +40,22 @@
                 android:ellipsize="start"
                 android:gravity="center_vertical|start"
                 android:minHeight="44dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:focusableInTouchMode="false"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"
                 android:textSize="24sp" />
+
+            <!-- Up to 3 contact matches (bc_row each), filled by DialerActivity. -->
+            <LinearLayout
+                android:id="@+id/bc_dialer_matches"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:descendantFocusability="afterDescendants"
+                android:orientation="vertical"
+                android:visibility="gone" />
 
             <!-- Call from: ◀ ▶ change it, OK opens the list. -->
             <LinearLayout

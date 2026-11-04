@@ -4,6 +4,7 @@ import android.app.Activity
 import com.busycall.app.bridge.Bridge
 import com.busycall.app.bridge.CallState
 import com.busycall.app.bridge.CallUi
+import com.busycall.app.bridge.ContactUi
 import com.busycall.app.bridge.PlaceProblem
 import com.busycall.app.bridge.PlaceResult
 import com.busycall.app.bridge.NumberDraft
@@ -74,6 +75,16 @@ class FakeBridge(
     override fun hold(callId: Long) = setState(callId, CallState.OnHold)
     override fun resume(callId: Long) = setState(callId, CallState.Connected)
     override fun silenceRinger() { silenced++ }
+
+    // ---- Contacts and call log ----
+    var contactsAreOn = true
+    val contacts = mutableListOf<ContactUi>()
+    val deletedRecents = mutableListOf<RecentUi>()
+
+    override fun contactsOn() = contactsAreOn
+    override fun turnContactsOn(activity: Activity): Boolean { contactsAreOn = true; return true }
+    override fun contacts(): List<ContactUi> = if (contactsAreOn) contacts.toList() else emptyList()
+    override fun deleteRecent(recent: RecentUi) { deletedRecents.add(recent); recents.remove(recent) }
 
     fun setState(callId: Long, state: CallState) {
         val i = calls.indexOfFirst { it.id == callId }

@@ -29,7 +29,10 @@ sealed class DialOutcome {
     data class Failed(val problem: PlaceProblem) : DialOutcome()
 }
 
-/** Dialer logic (PLAN.md S2, basic: no contact matching yet). Plain class (see HomeViewModel). */
+/**
+ * Dialer logic (PLAN.md S2, §3.3). Plain class (see HomeViewModel). Contact matching: the screen
+ * calls [buildMatcher] once and [matchesFor] per keypress, both off the main thread.
+ */
 class DialerViewModel(private val bridge: Bridge = Bridges.current, private val hasTelephony: Boolean) {
 
     var number = ""
@@ -74,6 +77,30 @@ class DialerViewModel(private val bridge: Bridge = Bridges.current, private val 
 
     fun fromChoices(): List<FromChoice> = choices
 
+    /**
+     * The keypad-letter index of the phone's contacts plus call-log numbers (PLAN §3.3).
+     * Slow-ish: call it off the main thread.
+     */
+    fun buildMatcher(): KeypadMatcher {
+        if (!bridge.isRunning()) return KeypadMatcher(emptyList())
+        val fromLog = bridge.recents(LOG_ENTRIES).map {
+            KeypadMatcher.DialEntry(it.peerName, it.peerUri, SipAddress.parse(it.peerUri).user.ifEmpty { it.peerUri })
+        }
+        return KeypadMatcher(bridge.contacts(), fromLog)
+    }
+
+    fun matchesFor(matcher: KeypadMatcher?, text: String): List<DialMatch> = matcher?.match(text) ?: emptyList()
+
+    /** CALL or OK on a suggestion: calls it from the chosen number (or hands it to the SIM dialer). */
+    fun callMatch(match: DialMatch, place: (fromId: String, number: String) -> PlaceResult): DialOutcome {
+        val from = choices.getOrNull(fromIndex) ?: return DialOutcome.Failed(PlaceProblem.NoNumber)
+        if (from.id == null) return DialOutcome.PhoneDialer(match.display)
+        return when (val result = place(from.id, match.uri)) {
+            PlaceResult.Placed -> DialOutcome.Placed
+            is PlaceResult.Failed -> DialOutcome.Failed(result.problem)
+        }
+    }
+
     /** [place] places a BusyCall call (the screen passes `bridge.placeCall` with itself). */
     fun call(place: (fromId: String, number: String) -> PlaceResult): DialOutcome {
         if (number.isBlank()) {
@@ -93,5 +120,6 @@ class DialerViewModel(private val bridge: Bridge = Bridges.current, private val 
 
     companion object {
         const val MAX_LENGTH = 40
+        private const val LOG_ENTRIES = 100
     }
 }

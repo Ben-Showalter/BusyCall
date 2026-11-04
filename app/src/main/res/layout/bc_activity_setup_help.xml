@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Make a setup code (PLAN.md S7c): save the offline page, take it to a computer, scan. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bc_background"
+    android:orientation="vertical">
+
+    <include layout="@layout/bc_titlebar" />
+    <include layout="@layout/bc_oncall_bar" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:focusable="false"
+        android:descendantFocusability="afterDescendants">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/bc_gutter">
+
+            <TextView
+                style="@style/BcText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxLines="4"
+                android:text="@string/bc_help_step1" />
+
+            <TextView
+                android:id="@+id/bc_help_save"
+                style="@style/BcButton.Call"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:stateListAnimator="@null"
+                android:text="@string/bc_help_save" />
+
+            <TextView
+                android:id="@+id/bc_help_result"
+                style="@style/BcText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxLines="4"
+                android:paddingTop="4dp"
+                android:textSize="@dimen/bc_text_label"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/bc_help_step2"
+                style="@style/BcText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxLines="4"
+                android:paddingTop="10dp" />
+
+            <TextView
+                style="@style/BcText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxLines="5"
+                android:paddingTop="10dp"
+                android:text="@string/bc_help_step3" />
+
+            <TextView
+                style="@style/BcText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxLines="4"
+                android:paddingTop="10dp"
+                android:text="@string/bc_help_step4" />
+
+            <TextView
+                android:id="@+id/bc_help_scan"
+                style="@style/BcButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:stateListAnimator="@null"
+                android:text="@string/bc_help_scan" />
+        </LinearLayout>
+    </ScrollView>
+
+    <include layout="@layout/bc_footer" />
+</LinearLayout>

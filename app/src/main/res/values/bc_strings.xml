@@ -64,6 +64,8 @@
     <string name="bc_recent_line">%1$s · %2$s · %3$s</string>
 
     <!-- Menus -->
+    <string name="bc_menu_contacts">Contacts</string>
+    <string name="bc_menu_calllog">Call log</string>
     <string name="bc_menu_numbers">Numbers</string>
     <!-- Temporary: opens baresip's original screens, for calling until BusyCall's own exist. -->
     <string name="bc_menu_classic">Classic screens</string>
@@ -87,6 +89,43 @@
     <!-- Add a number -->
     <string name="bc_add_type">Type it in</string>
     <string name="bc_add_paste">Paste setup link</string>
+    <string name="bc_add_scan">Scan QR setup code</string>
+
+    <!-- S7b: asked before the camera opens. -->
+    <string name="bc_scan_ready_title">Do you have a QR setup code ready?</string>
+    <string name="bc_scan_ready_yes">Yes, scan it</string>
+    <string name="bc_scan_ready_no">No, help me set it up</string>
+
+    <!-- Scan screen -->
+    <string name="bc_scan_title">Scan setup code</string>
+    <string name="bc_scan_point">Point the camera at the QR setup code. Hold the phone still, about a hand\'s width away.</string>
+    <string name="bc_scan_again">Scan again</string>
+    <string name="bc_scan_help">Help me make a code</string>
+    <string name="bc_scan_footer">OK scans again · BACK cancels</string>
+    <string name="bc_scan_not_a_code">That QR code isn\'t a BusyCall setup code. Make one with the setup page (Options › Help me make a code).</string>
+    <string name="bc_scan_no_camera">The camera couldn\'t be opened. Close any other app using it, then press Retry.</string>
+    <string name="bc_scan_no_permission">BusyCall needs the camera to read the code. Press Retry and choose Allow, or go to Settings › Apps › BusyCall › Permissions › Camera.</string>
+
+    <!-- S7c Make a setup code. The file name is the setup page's (AppIdentity.SETUP_PAGE_FILE). -->
+    <string name="bc_help_title">Make a setup code</string>
+    <string name="bc_help_step1">1. Save the setup page to this phone.</string>
+    <string name="bc_help_save">Save setup page to phone</string>
+    <string name="bc_help_saving">Saving…</string>
+    <!-- %1$s = where it went, e.g. "Download › (the setup page's file name)". -->
+    <string name="bc_help_saved">Saved: %1$s</string>
+    <!-- %1$s = path on the SD card. -->
+    <string name="bc_help_saved_sd">Saved on the SD card: %1$s</string>
+    <string name="bc_help_save_failed">The page couldn\'t be saved. Check the phone has free space, then try again.</string>
+    <string name="bc_help_no_storage">BusyCall needs storage access to save to Download. Press Save again and choose Allow.</string>
+    <!-- %1$s = the setup page's file name. -->
+    <string name="bc_help_step2">2. Move %1$s to a computer over USB, Bluetooth, or SD card.</string>
+    <string name="bc_help_step3">3. Open it in a web browser on the computer and fill in your number\'s details. It works offline and makes a QR code.</string>
+    <string name="bc_help_step4">4. Come back here and scan the code.</string>
+    <string name="bc_help_scan">Scan the code</string>
+    <string name="bc_help_save_again">Save again</string>
+    <string name="bc_help_save_sd">Save to SD card</string>
+    <string name="bc_help_bluetooth">Send by Bluetooth</string>
+    <string name="bc_help_no_bluetooth">No app on this phone can send the file. Use USB or an SD card instead.</string>
     <string name="bc_paste_nothing">Nothing copied yet: copy the setup link from your text or email, then try again.</string>
     <string name="bc_paste_not_a_code">This isn\'t a BusyCall setup link. Ask your admin for a BusyCall setup code.</string>
     <string name="bc_paste_too_new">This setup link is for a newer version of BusyCall. Update the app, then try again.</string>
@@ -184,7 +223,9 @@
 
     <!-- Dialer -->
     <string name="bc_dialer_title">New call</string>
-    <string name="bc_dialer_number">Number</string>
+    <string name="bc_dialer_number">Number or name</string>
+    <!-- Before a contact number in the Dialer's matches. %1$s = "Mobile". -->
+    <string name="bc_match_label_prefix">%1$s · </string>
     <string name="bc_dialer_from_label">Call from</string>
     <!-- The chosen number with arrows showing it can be changed. %1$s = "Office · 104". -->
     <string name="bc_dialer_from_arrows">◀ %1$s ▶</string>
@@ -197,6 +238,27 @@
     <string name="bc_dialer_invalid">That isn\'t a number or address BusyCall can call.</string>
     <string name="bc_dialer_phone_busy">A phone call is in progress. Finish it first.</string>
     <string name="bc_dialer_failed">The call couldn\'t be started. Check the number\'s connection, then try again.</string>
+
+    <!-- S3 Contacts -->
+    <string name="bc_contacts_title">Contacts</string>
+    <string name="bc_contacts_footer">2–9 jump · CALL calls</string>
+    <string name="bc_contacts_off">Contacts are off — Options › Allow contacts</string>
+    <string name="bc_contacts_allow">Allow contacts</string>
+    <string name="bc_contacts_empty">No contacts with a number on this phone.</string>
+    <string name="bc_contacts_refused">Contacts weren\'t allowed. To allow them: Settings › Apps › BusyCall › Permissions › Contacts.</string>
+    <!-- %1$s label ("Mobile"), %2$s number. -->
+    <string name="bc_contacts_number_line">%1$s · %2$s</string>
+    <!-- %1$s the first number's line, %2$d how many more. -->
+    <string name="bc_contacts_more">%1$s · +%2$d more</string>
+    <!-- Menu item. %1$s = "Mobile · +15550198". -->
+    <string name="bc_contacts_call_number">Call %1$s</string>
+
+    <!-- S6 Call log -->
+    <string name="bc_calllog_title">Call log</string>
+    <string name="bc_calllog_footer">CALL calls back</string>
+    <string name="bc_calllog_empty">No calls yet.</string>
+    <string name="bc_calllog_call_back">Call back</string>
+    <string name="bc_calllog_delete">Delete</string>
 
     <!-- Settings -->
     <string name="bc_settings_title">Settings</string>

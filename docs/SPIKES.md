@@ -55,4 +55,8 @@ _Not started._
 _Not started._
 
 ## S6 — Camera, QR and the setup page
-_Not started._
+**Built, not tested on a phone yet (2026-11-04).** The scan screen uses the classic
+`android.hardware.Camera` API (preview about 640×480, continuous or auto focus) and ZXing core's
+`QRCodeReader` (normal and inverted) on a background thread. A unit test decodes a generated code.
+Record per phone: does the preview open, how far away does a code on a PC screen read, does the
+setup page save to Download (API 28 path vs 29+), and which of USB, Bluetooth and SD card work.

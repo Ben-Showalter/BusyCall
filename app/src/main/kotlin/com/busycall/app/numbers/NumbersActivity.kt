@@ -13,8 +13,10 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import com.busycall.app.numbers.setup.ScanActivity
 import com.busycall.app.numbers.setup.SetupCodeParser
 import com.busycall.app.numbers.setup.SetupFoundActivity
+import com.busycall.app.numbers.setup.SetupHelpActivity
 import com.busycall.app.settings.SettingsActivity
 import com.busycall.app.ui.FlipBaseActivity
 import com.busycall.app.ui.MenuItem
@@ -26,7 +28,7 @@ import com.tutpro.baresip.R
 
 /**
  * Numbers (PLAN.md S7): every SIP number with its status, ★ the default, "Phone (SIM)"
- * (PLAN §5.2) and "+ Add a number" (Type it in / Paste setup link).
+ * (PLAN §5.2) and "+ Add a number" (Type it in / Paste setup link / Scan QR setup code).
  */
 class NumbersActivity : FlipBaseActivity() {
 
@@ -153,9 +155,21 @@ class NumbersActivity : FlipBaseActivity() {
     }
 
     private fun showAddMenu() {
-        Menus.show(this, getString(R.string.bc_numbers_add), listOf(
-            MenuItem(getString(R.string.bc_add_type)) { startActivity(Intent(this, NumberSetupActivity::class.java)) },
-            MenuItem(getString(R.string.bc_add_paste)) { pasteSetupLink() },
+        Menus.show(this, getString(R.string.bc_numbers_add), buildList {
+            add(MenuItem(getString(R.string.bc_add_type)) { startActivity(Intent(this@NumbersActivity, NumberSetupActivity::class.java)) })
+            add(MenuItem(getString(R.string.bc_add_paste)) { pasteSetupLink() })
+            // Hidden on phones without a camera (AGENTS §6a).
+            if (packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
+                add(MenuItem(getString(R.string.bc_add_scan)) { askCodeReady() })
+            }
+        })
+    }
+
+    /** S7b: always ask first; "No" opens Make a setup code, never the camera (AGENTS §6a). */
+    private fun askCodeReady() {
+        Menus.show(this, getString(R.string.bc_scan_ready_title), listOf(
+            MenuItem(getString(R.string.bc_scan_ready_yes)) { startActivity(Intent(this, ScanActivity::class.java)) },
+            MenuItem(getString(R.string.bc_scan_ready_no)) { startActivity(Intent(this, SetupHelpActivity::class.java)) },
         ))
     }
 
