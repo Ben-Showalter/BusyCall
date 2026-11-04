@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BusyCall colour roles (AGENTS.md §9: dark red theme). Use these names in layouts, never raw hex. -->
+<resources>
+    <!-- Title and softkey bars; white text on it is 12:1. -->
+    <color name="bc_bar">#FF6E0A12</color>
+    <color name="bc_background">#FF0B0B0C</color>
+    <color name="bc_surface">#FF1C1C1E</color>
+    <color name="bc_surface_dialog">#FF26262A</color>
+    <color name="bc_line">#FF3A3A3E</color>
+
+    <color name="bc_text">#FFF2F2F2</color>
+    <color name="bc_text_on_bar">#FFFFFFFF</color>
+    <color name="bc_text_muted">#FFB8B8B8</color>
+    <!-- Missed calls, errors. -->
+    <color name="bc_text_alert">#FFFF8A8A</color>
+    <color name="bc_accent">#FFFF8F8F</color>
+    <color name="bc_accent_soft">#FFFFB4B4</color>
+    <color name="bc_footer_hint">#FFFFD6D6</color>
+
+    <!-- Focus: a light-red ring over a dark-red tint (the guide's list_row_selector, recoloured). -->
+    <color name="bc_focus_ring">#FFFF6B6B</color>
+    <color name="bc_focus_tint">#996E0A12</color>
+
+    <!-- Call/Answer green; Decline/End a brighter red than the bars. Always with a text label. -->
+    <color name="bc_call">#FF1E7A34</color>
+    <color name="bc_end">#FFC62828</color>
+
+    <!-- Number status dots. -->
+    <color name="bc_status_ok">#FF4CD964</color>
+    <color name="bc_status_wait">#FFFFD54F</color>
+    <color name="bc_status_off">#FFFF6B6B</color>
+</resources>

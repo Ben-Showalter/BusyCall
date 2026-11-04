@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BusyCall's own strings. All prefixed bc_ so they never collide with baresip-studio's.
+     Screens are 240x320: keep labels short. Placeholders, never concatenation (AGENTS.md §9). -->
+<resources>
+
+    <!-- Shared -->
+    <!-- Softkey label that opens the screen's menu. -->
+    <string name="bc_options">Options</string>
+    <string name="bc_ok">OK</string>
+    <string name="bc_cancel">Cancel</string>
+    <!-- Button: try again after a failure. -->
+    <string name="bc_retry">Retry</string>
+    <!-- Toast for a key BusyCall doesn't know yet, so new phones can be learned. %1$d keycode, %2$d scan code. -->
+    <string name="bc_unknown_key">Unhandled key %1$d (scan %2$d)</string>
+    <!-- Row that opens the screen's Options menu; for screens where the keyboard takes the softkeys. -->
+    <string name="bc_more_options">More options…</string>
+
+    <!-- Number status -->
+    <string name="bc_status_registered">Registered</string>
+    <string name="bc_status_connecting">Connecting…</string>
+    <string name="bc_status_no_connection">No connection</string>
+    <!-- The number is set not to register with its phone system. -->
+    <string name="bc_status_off">Off</string>
+
+    <!-- Connection types -->
+    <string name="bc_transport_udp">UDP</string>
+    <string name="bc_transport_tcp">TCP</string>
+    <string name="bc_transport_tls">TLS (secure)</string>
+
+    <!-- Times -->
+    <string name="bc_time_just_now">just now</string>
+    <!-- %1$d = minutes -->
+    <string name="bc_time_minutes_ago">%1$d min ago</string>
+    <string name="bc_time_yesterday">yesterday</string>
+
+    <!-- A number's name and extension, e.g. "Office · 104". -->
+    <string name="bc_number_title">%1$s · %2$s</string>
+    <!-- The default number, marked with a star. %1$s = "Office · 104". -->
+    <string name="bc_number_default">★ %1$s</string>
+    <!-- Server, connection type and status, e.g. "pbx.example.org · TLS · Registered". -->
+    <string name="bc_number_details">%1$s · %2$s · %3$s</string>
+    <plurals name="bc_voicemail_count">
+        <item quantity="one">%d voicemail</item>
+        <item quantity="other">%d voicemail</item>
+    </plurals>
+
+    <!-- Home -->
+    <string name="bc_home_my_numbers">My numbers</string>
+    <string name="bc_home_recent">Recent</string>
+    <!-- Footer hint on Home. -->
+    <string name="bc_home_hint">0–9 to dial</string>
+    <string name="bc_home_starting">Starting the phone service…</string>
+    <string name="bc_home_permissions_denied">BusyCall needs the microphone (and notifications) to make and receive calls. Press Retry to allow them.</string>
+    <string name="bc_home_no_numbers">No numbers yet</string>
+    <string name="bc_home_no_recents">No calls yet</string>
+    <string name="bc_recent_missed">Missed</string>
+    <string name="bc_recent_incoming">Incoming</string>
+    <string name="bc_recent_outgoing">Outgoing</string>
+    <!-- Which of the user's numbers a call came in on. %1$s = "Home". -->
+    <string name="bc_recent_to">to %1$s</string>
+    <!-- Which of the user's numbers a call went out from. %1$s = "Office". -->
+    <string name="bc_recent_from">from %1$s</string>
+    <!-- Recent-call line: kind, number, time, e.g. "Missed · to Home · 10 min ago". -->
+    <string name="bc_recent_line">%1$s · %2$s · %3$s</string>
+
+    <!-- Menus -->
+    <string name="bc_menu_numbers">Numbers</string>
+    <!-- Temporary: opens baresip's original screens, for calling until BusyCall's own exist. -->
+    <string name="bc_menu_classic">Classic screens</string>
+    <string name="bc_menu_settings">Settings</string>
+
+    <!-- Numbers -->
+    <string name="bc_numbers_title">Numbers</string>
+    <string name="bc_numbers_hint">★ = the number the Dialer calls from</string>
+    <string name="bc_numbers_footer">OK for choices</string>
+    <string name="bc_numbers_add">+ Add a number</string>
+    <string name="bc_number_edit">Edit</string>
+    <string name="bc_number_make_default">Make default ★</string>
+    <string name="bc_number_delete">Delete</string>
+    <string name="bc_number_delete_title">Delete number?</string>
+    <!-- %1$s = the number's name -->
+    <string name="bc_number_delete_message">Delete %1$s from this phone? Its calls in Recent are deleted too.</string>
+    <string name="bc_sim_title">Phone (SIM)</string>
+    <string name="bc_sim_subtitle">Opens the phone\'s dialer</string>
+    <string name="bc_sim_no_dialer">This phone has no dialer app BusyCall can open.</string>
+
+    <!-- Add a number -->
+    <string name="bc_add_type">Type it in</string>
+    <string name="bc_add_paste">Paste setup link</string>
+    <string name="bc_paste_nothing">Nothing copied yet: copy the setup link from your text or email, then try again.</string>
+    <string name="bc_paste_not_a_code">This isn\'t a BusyCall setup link. Ask your admin for a BusyCall setup code.</string>
+    <string name="bc_paste_too_new">This setup link is for a newer version of BusyCall. Update the app, then try again.</string>
+    <string name="bc_paste_no_server">This setup link has no server address. Ask your admin for a new one.</string>
+    <string name="bc_paste_no_user">This setup link has no extension or username. Ask your admin for a new one.</string>
+
+    <!-- Number setup -->
+    <string name="bc_setup_title">Add a number</string>
+    <string name="bc_setup_edit_title">Edit number</string>
+    <string name="bc_field_name">Name</string>
+    <string name="bc_field_name_hint">Office</string>
+    <!-- The keypad has no dot key, so * types one in this field. -->
+    <string name="bc_field_server">Server (* types a dot)</string>
+    <string name="bc_field_server_hint">pbx.example.org</string>
+    <string name="bc_field_port">Port</string>
+    <string name="bc_field_port_hint">automatic</string>
+    <string name="bc_field_user">Extension or username</string>
+    <string name="bc_field_password">Password</string>
+    <string name="bc_field_password_keep">Leave empty to keep the saved password.</string>
+    <string name="bc_field_connection">Connection</string>
+    <!-- Authentication ID; only needed when it differs from the extension. -->
+    <string name="bc_field_auth_user">Auth ID</string>
+    <string name="bc_field_auth_user_hint">same as extension</string>
+    <string name="bc_field_voicemail">Voicemail number</string>
+    <string name="bc_field_voicemail_hint">*97</string>
+    <string name="bc_save_connect">Save and connect</string>
+    <string name="bc_show_password">Show password</string>
+    <string name="bc_hide_password">Hide password</string>
+    <string name="bc_saved_connecting">Saved. Connecting…</string>
+
+    <!-- Problems saving a number, in plain words -->
+    <string name="bc_problem_not_running">The phone service is still starting. Wait a moment, then press Save again.</string>
+    <string name="bc_problem_server">Check the server address, e.g. pbx.example.org or 192.168.1.10.</string>
+    <string name="bc_problem_port">The port must be a number from 1 to 65535, or empty.</string>
+    <string name="bc_problem_user">Check the extension or username: letters, numbers and . - _ only.</string>
+    <string name="bc_problem_password">The password can\'t contain a double quote (\") and must be 64 characters or fewer.</string>
+    <string name="bc_problem_name">The name can use letters, numbers, spaces and . - _ only.</string>
+    <string name="bc_problem_name_taken">Another number already has this name. Choose a different one.</string>
+    <string name="bc_problem_exists">This number is already on the phone.</string>
+    <string name="bc_problem_allocation">The phone service couldn\'t add this number. Check the details, then press Save again.</string>
+
+    <!-- Setup code found -->
+    <string name="bc_found_title">Setup code found</string>
+    <string name="bc_found_hint">Check these, then Save. OK on a line to change it.</string>
+    <string name="bc_found_footer">BACK to cancel</string>
+    <!-- %1$s = the extension, used as the name when none is given -->
+    <string name="bc_found_no_name">(none: shows as %1$s)</string>
+    <string name="bc_found_user_password">Extension · Password</string>
+    <!-- %1$s extension, %2$s hidden password or "none" -->
+    <string name="bc_found_user_password_value">%1$s · %2$s</string>
+    <string name="bc_found_no_password">no password</string>
+    <string name="bc_found_edit">Change details</string>
+    <string name="bc_found_check">Check the details, then press Save again.</string>
+
+    <!-- Settings -->
+    <string name="bc_settings_title">Settings</string>
+    <string name="bc_settings_options_side">Options key</string>
+    <string name="bc_settings_side_right">Right softkey (OK to change)</string>
+    <string name="bc_settings_side_left">Left softkey (OK to change)</string>
+    <string name="bc_settings_about">About</string>
+    <string name="bc_settings_about_sub">Version, licenses</string>
+    <string name="bc_about_text">BusyCall is built on baresip-studio, Copyright (c) 2018 TutPro Inc., and the baresip library. Distributed under the BSD-3-Clause license.</string>
+</resources>

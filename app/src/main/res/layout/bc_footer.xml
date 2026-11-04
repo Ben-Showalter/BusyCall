@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Softkey bar. Only "Options" has a label; FlipBaseActivity moves it to the side of the Options
+     key (right by default, left after the first MENU press). Labels are not focusable (guide §1);
+     the Options label is still tappable for touch phones. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/bc_footer"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="@dimen/bc_bar_min_height"
+    android:background="@color/bc_bar"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/bc_gutter"
+    android:paddingEnd="@dimen/bc_gutter">
+
+    <TextView
+        android:id="@+id/bc_footer_hint"
+        style="@style/BcText.Meta"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:textColor="@color/bc_footer_hint" />
+
+    <TextView
+        android:id="@+id/bc_footer_options"
+        style="@style/BcText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minHeight="@dimen/bc_bar_min_height"
+        android:gravity="center_vertical"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:clickable="true"
+        android:focusable="false"
+        android:text="@string/bc_options"
+        android:textColor="@color/bc_text_on_bar"
+        android:textSize="@dimen/bc_text_softkey" />
+</LinearLayout>

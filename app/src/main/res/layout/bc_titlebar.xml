@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Title bar: screen title on the left, a short status (battery, mode) on the right. Not focusable. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/bc_titlebar"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="@dimen/bc_bar_min_height"
+    android:background="@color/bc_bar"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/bc_gutter"
+    android:paddingEnd="@dimen/bc_gutter">
+
+    <TextView
+        android:id="@+id/bc_title"
+        style="@style/BcText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textColor="@color/bc_text_on_bar"
+        android:textSize="@dimen/bc_text_header" />
+
+    <TextView
+        android:id="@+id/bc_title_status"
+        style="@style/BcText.Meta"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/bc_footer_hint" />
+</LinearLayout>

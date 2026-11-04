@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BusyCall sizes for a 240x320 mdpi screen (guide §4: body 16sp, labels 14sp, metadata 11sp, headers 18sp). -->
+<resources>
+    <dimen name="bc_text_header">18sp</dimen>
+    <dimen name="bc_text_body">16sp</dimen>
+    <dimen name="bc_text_label">14sp</dimen>
+    <dimen name="bc_text_meta">11sp</dimen>
+    <dimen name="bc_text_softkey">14sp</dimen>
+
+    <dimen name="bc_bar_min_height">26dp</dimen>
+    <dimen name="bc_row_min_height">40dp</dimen>
+    <dimen name="bc_button_min_height">40dp</dimen>
+    <dimen name="bc_gutter">8dp</dimen>
+    <dimen name="bc_focus_stroke">2dp</dimen>
+    <dimen name="bc_corner">8dp</dimen>
+    <dimen name="bc_status_dot">8dp</dimen>
+</resources>

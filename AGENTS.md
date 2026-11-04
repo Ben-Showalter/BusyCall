@@ -90,6 +90,15 @@ UPSTREAM.md                  upstream version we're on + every change to upstrea
 
 Rules:
 
+- Our code is Kotlin package **`com.busycall.app`**; the Android `namespace` stays
+  `com.tutpro.baresip`, so resources are `com.tutpro.baresip.R`. Importing that `R` is
+  the one allowed `com.tutpro.baresip` import outside `bridge/`.
+- Our resources are all prefixed `bc_` (and styles `Bc…`/`Theme.BusyCall`) so they never
+  collide with upstream's.
+- Screens are plain `android.app.Activity` (via `ui/FlipBaseActivity`), not AppCompat:
+  nothing grabs MENU, and `configChanges` keeps them alive across a flip. "ViewModels" are
+  plain Kotlin classes (not androidx `ViewModel`), constructed with a `Bridge` so tests pass
+  `FakeBridge`.
 - Only `bridge/` imports `com.tutpro.baresip.*`. Screens and ViewModels use
   `bridge/` types only.
 - **No Compose UI anywhere in our code.** The backend's `compose-runtime` state

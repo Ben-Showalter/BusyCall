@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Green action button (Save, Call, Answer): white ring when focused. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/bc_call" />
+            <corners android:radius="@dimen/bc_corner" />
+            <stroke android:width="@dimen/bc_focus_stroke" android:color="@color/bc_text_on_bar" />
+        </shape>
+    </item>
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/bc_call" />
+            <corners android:radius="@dimen/bc_corner" />
+            <stroke android:width="@dimen/bc_focus_stroke" android:color="@color/bc_text_on_bar" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/bc_call" />
+            <corners android:radius="@dimen/bc_corner" />
+        </shape>
+    </item>
+</selector>

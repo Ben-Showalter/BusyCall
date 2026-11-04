@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A full-width green action button, for screens that build their content in code. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/BcButton.Call"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="10dp" />

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Theme for BusyCall's own screens (plain framework theme: no AppCompat, nothing grabs MENU). -->
+    <style name="Theme.BusyCall" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/bc_background</item>
+        <item name="android:colorBackground">@color/bc_background</item>
+        <item name="android:colorPrimary">@color/bc_bar</item>
+        <item name="android:colorPrimaryDark">@color/bc_bar</item>
+        <item name="android:colorAccent">@color/bc_accent</item>
+        <item name="android:statusBarColor">@color/bc_bar</item>
+        <item name="android:navigationBarColor">@color/bc_background</item>
+        <item name="android:textColorPrimary">@color/bc_text</item>
+        <item name="android:textColorSecondary">@color/bc_text_muted</item>
+        <item name="android:textColorHint">@color/bc_text_muted</item>
+        <item name="android:alertDialogTheme">@style/BcDialog</item>
+    </style>
+
+    <!-- Menus and confirmations: D-pad works on AlertDialog lists and buttons as they are. -->
+    <style name="BcDialog" parent="android:Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">@color/bc_accent</item>
+        <item name="android:colorBackground">@color/bc_surface_dialog</item>
+        <item name="android:textColorPrimary">@color/bc_text</item>
+        <item name="android:textColorSecondary">@color/bc_text_muted</item>
+    </style>
+
+    <style name="BcText">
+        <item name="android:textColor">@color/bc_text</item>
+        <item name="android:textSize">@dimen/bc_text_body</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+
+    <style name="BcText.Meta">
+        <item name="android:textColor">@color/bc_text_muted</item>
+        <item name="android:textSize">@dimen/bc_text_meta</item>
+    </style>
+
+    <style name="BcText.Section">
+        <item name="android:textColor">@color/bc_text_muted</item>
+        <item name="android:textSize">@dimen/bc_text_meta</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:paddingStart">@dimen/bc_gutter</item>
+        <item name="android:paddingTop">6dp</item>
+        <item name="android:paddingBottom">2dp</item>
+    </style>
+
+    <style name="BcText.Label">
+        <item name="android:textColor">@color/bc_text_muted</item>
+        <item name="android:textSize">@dimen/bc_text_label</item>
+        <item name="android:paddingTop">6dp</item>
+    </style>
+
+    <!-- Text fields: plain EditText, the phone's own keyboard (guide §3). -->
+    <style name="BcField">
+        <item name="android:textColor">@color/bc_text</item>
+        <item name="android:textSize">@dimen/bc_text_body</item>
+        <item name="android:background">@drawable/bc_field</item>
+        <item name="android:minHeight">@dimen/bc_row_min_height</item>
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:paddingEnd">8dp</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:imeOptions">actionNext|flagNoExtractUi</item>
+    </style>
+
+    <!-- Full-width focusable button (focus + touch). -->
+    <style name="BcButton">
+        <item name="android:textColor">@color/bc_text</item>
+        <item name="android:textSize">@dimen/bc_text_body</item>
+        <!-- No textStyle=bold: the stock font doesn't render it (guide §4). FlipBaseActivity fake-bolds. -->
+        <item name="android:gravity">center</item>
+        <item name="android:minHeight">@dimen/bc_button_min_height</item>
+        <item name="android:background">@drawable/bc_button</item>
+        <item name="android:focusable">true</item>
+        <item name="android:focusableInTouchMode">false</item>
+        <item name="android:clickable">true</item>
+    </style>
+
+    <style name="BcButton.Call">
+        <item name="android:background">@drawable/bc_button_call</item>
+        <item name="android:textColor">@color/bc_text_on_bar</item>
+    </style>
+</resources>

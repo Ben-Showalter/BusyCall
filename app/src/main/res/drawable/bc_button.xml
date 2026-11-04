@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Neutral button: dark surface, focus ring when focused or pressed. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/bc_focus_tint" />
+            <corners android:radius="@dimen/bc_corner" />
+            <stroke android:width="@dimen/bc_focus_stroke" android:color="@color/bc_focus_ring" />
+        </shape>
+    </item>
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/bc_focus_tint" />
+            <corners android:radius="@dimen/bc_corner" />
+            <stroke android:width="@dimen/bc_focus_stroke" android:color="@color/bc_focus_ring" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/bc_surface" />
+            <corners android:radius="@dimen/bc_corner" />
+        </shape>
+    </item>
+</selector>
