@@ -2,6 +2,7 @@ package com.busycall.app.numbers
 
 import com.busycall.app.bridge.Bridge
 import com.busycall.app.bridge.Bridges
+import com.busycall.app.bridge.NumberProblem
 import com.busycall.app.bridge.NumberStatus
 import com.busycall.app.bridge.Transport
 import com.busycall.app.numbers.setup.SetupCodeParser
@@ -22,6 +23,7 @@ data class NumbersRow(
     val transport: Transport,
     val status: NumberStatus,
     val isDefault: Boolean,
+    val problem: NumberProblem? = null,
 )
 
 /** What a number's menu offers, in order. */
@@ -42,7 +44,7 @@ class NumbersViewModel(private val bridge: Bridge = Bridges.current) {
     fun state(hasTelephony: Boolean): NumbersState = NumbersState(
         running = bridge.isRunning(),
         numbers = if (bridge.isRunning()) bridge.numbers().map {
-            NumbersRow(it.id, it.label, it.number, it.server, it.transport, it.status, it.isDefault)
+            NumbersRow(it.id, it.label, it.number, it.server, it.transport, it.status, it.isDefault, it.problem)
         } else emptyList(),
         showSim = hasTelephony,
     )

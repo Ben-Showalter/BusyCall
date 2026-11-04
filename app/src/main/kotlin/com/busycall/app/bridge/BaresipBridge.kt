@@ -89,21 +89,56 @@ object BaresipBridge : Bridge {
     override fun numbers(): List<NumberUi> {
         val agents = sipAgents()
         val defaultAor = BaresipService.uas.value.firstOrNull()?.account?.aor
+        logPasswordStateOnce(agents)
         return agents.map { ua ->
             val acc = ua.account
             val parts = SipAddress.parse(acc.luri.ifEmpty { acc.aor })
+            val status = statusOf(ua)
             NumberUi(
                 id = acc.aor,
                 label = acc.nickName.ifEmpty { parts.user },
                 number = parts.user,
                 server = parts.host,
                 transport = parts.transport ?: Transport.UDP,
-                status = statusOf(ua),
+                status = status,
                 voicemailNew = acc.vmNew,
                 isDefault = acc.aor == defaultAor,
+                problem = if (status == NumberStatus.NoConnection)
+                    RegistrationReason.of(BaresipService.registrationFailures[acc.aor]) else null,
             )
         }
     }
+
+    // ---- Password diagnostics: yes/no only, never the password or the full number (AGENTS §10) ----
+
+    @Volatile
+    private var loggedAfterStart = false
+
+    /** Once per process, when the accounts are first read: did each come back with its password? */
+    private fun logPasswordStateOnce(agents: List<UserAgent>) {
+        if (loggedAfterStart || agents.isEmpty()) return
+        loggedAfterStart = true
+        agents.forEach { logPasswordState("loaded", it.account) }
+    }
+
+    private fun logPasswordState(event: String, acc: Account) {
+        val hasPassword = acc.authPass.isNotEmpty() && acc.authPass != com.tutpro.baresip.NO_AUTH_PASS
+        val memoryOnly = BaresipService.aorPasswords.containsKey(acc.aor)
+        val savedLine = try {
+            java.io.File(BaresipService.filesPath, "accounts").readLines().firstOrNull { it.contains("<${acc.luri}>") }
+        } catch (e: Exception) {
+            null
+        }
+        val inFile = when {
+            savedLine == null -> "no line"
+            savedLine.contains(";auth_pass=") -> "yes"
+            else -> "no"
+        }
+        val masked = "***" + SipAddress.parse(acc.aor).user.takeLast(2)
+        Log.i(TAG, "Number $masked $event: password set=${yesNo(hasPassword)}, memory only=${yesNo(memoryOnly)}, saved in file=$inFile")
+    }
+
+    private fun yesNo(b: Boolean) = if (b) "yes" else "no"
 
     private fun statusOf(ua: UserAgent): NumberStatus = when {
         ua.account.regint == 0 -> NumberStatus.NotRegistering
@@ -206,6 +241,7 @@ object BaresipBridge : Bridge {
         }
         BaresipService.aorPasswords.remove(acc.aor)
         Account.saveAccounts()
+        logPasswordState("added", acc)
         if (acc.regint > 0) ua.reRegister()
         return SaveResult.Saved(acc.aor)
     }
@@ -245,6 +281,7 @@ object BaresipBridge : Bridge {
             reRegister = true
         }
         Account.saveAccounts()
+        logPasswordState("updated", acc)
         if (reRegister && acc.regint > 0) ua.reRegister()
         return SaveResult.Saved(acc.aor)
     }

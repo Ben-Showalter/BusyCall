@@ -99,10 +99,11 @@ class NumbersActivity : FlipBaseActivity() {
                     val label = getString(R.string.bc_number_title, n.label, n.number)
                     Rows.setText(title, if (n.isDefault) getString(R.string.bc_number_default, label) else label)
                     Words.dot(title, n.status)
-                    Rows.setText(subtitle, getString(
+                    // While it can't connect, the reason in plain words replaces the details (PLAN S10).
+                    Rows.setText(subtitle, n.problem?.let { Words.problem(this, it) } ?: getString(
                         R.string.bc_number_details, n.server, Words.transport(this, n.transport), Words.status(this, n.status),
                     ))
-                    Rows.tone(subtitle, Words.statusTone(n.status))
+                    Rows.tone(subtitle, if (n.problem != null) RowTone.Alert else Words.statusTone(n.status))
                     row.setOnClickListener { showNumberMenu(n) }
                 }
                 Entry.Sim -> {

@@ -1,6 +1,7 @@
 package com.busycall.app.home
 
 import com.busycall.app.bridge.CallDirection
+import com.busycall.app.bridge.NumberProblem
 import com.busycall.app.bridge.NumberStatus
 import com.busycall.app.ui.TimeLabel
 
@@ -25,6 +26,7 @@ data class HomeNumberRow(
     val status: NumberStatus,
     val voicemailNew: Int,
     val isDefault: Boolean,
+    val problem: NumberProblem? = null,
 )
 
 data class HomeRecentRow(

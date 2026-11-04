@@ -27,6 +27,8 @@ data class NumberUi(
     val voicemailNew: Int,
     /** The ★ number: the Dialer calls from it unless told otherwise. */
     val isDefault: Boolean,
+    /** Why the last registration failed, while it still has no connection; null otherwise. */
+    val problem: NumberProblem? = null,
 )
 
 enum class CallDirection { In, Out }

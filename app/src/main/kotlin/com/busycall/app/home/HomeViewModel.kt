@@ -23,7 +23,7 @@ class HomeViewModel(
         val zoneId = zone()
         return HomeState(
             numbers = bridge.numbers().map {
-                HomeNumberRow(it.id, it.label, it.number, it.status, it.voicemailNew, it.isDefault)
+                HomeNumberRow(it.id, it.label, it.number, it.status, it.voicemailNew, it.isDefault, it.problem)
             },
             recents = bridge.recents(RECENT_LIMIT).map {
                 HomeRecentRow(

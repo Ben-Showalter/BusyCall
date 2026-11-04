@@ -19,13 +19,19 @@ title (and an optional question under it); the selected row gets the red focus r
 - **Problems:** "Starting the phone service…" until baresip is up; if permissions were refused,
   a plain message and **Retry**.
 - **Keys:** 0–9 `*` `#` open the Dialer (S2) with that digit. CALL or OK on a recent calls back,
-  from the number the call was on. OK on a number: Retry if it has no connection, else Numbers.
+  from the number the call was on. OK on a number: Edit if the password was refused, Retry if
+  it has no connection, else Numbers.
+- **Why it can't connect (S10):** under a number with no connection, in red: "Wrong extension
+  or password — OK to check it" (401/403/407), "The server isn't answering" (408/timeout),
+  "Can't find the server: check its address" (DNS), "No internet connection", or "Can't
+  connect: <server's reason>".
 - **Options:** Contacts · Call log · Numbers · Classic screens (temporary) · Settings.
 - **Empty:** one "+ Add a number" row.
 
 ## S7 Numbers (`numbers/NumbersActivity`)
 - **Shows:** hint "★ = the number the Dialer calls from"; each number `★ Name · ext` (★ on the
-  default) with a status dot and `server · connection · status`; **Phone (SIM)** "Opens the
+  default) with a status dot and `server · connection · status` (the S10 reason instead, in red,
+  while it can't connect); **Phone (SIM)** "Opens the
   phone's dialer" (only with telephony); **+ Add a number**.
 - **OK on a number:** menu Edit · Make default ★ (not on the default) · Retry (when not
   registered) · Delete (confirm).

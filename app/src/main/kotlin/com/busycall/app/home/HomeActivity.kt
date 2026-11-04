@@ -12,12 +12,15 @@ import android.widget.Toast
 import com.busycall.app.bridge.BaresipBridge
 import com.busycall.app.bridge.Bridges
 import com.busycall.app.bridge.CallDirection
+import com.busycall.app.bridge.NumberProblem
 import com.busycall.app.bridge.NumberStatus
 import com.busycall.app.bridge.PlaceResult
 import com.busycall.app.call.InCallActivity
 import com.busycall.app.calllog.CallLogActivity
 import com.busycall.app.contacts.ContactsActivity
 import com.busycall.app.dialer.DialerActivity
+import com.busycall.app.numbers.DraftExtras
+import com.busycall.app.numbers.NumberSetupActivity
 import com.busycall.app.numbers.NumbersActivity
 import com.busycall.app.settings.SettingsActivity
 import com.busycall.app.ui.FlipBaseActivity
@@ -133,13 +136,17 @@ class HomeActivity : FlipBaseActivity() {
         Rows.fill(numbers, state.numbers) { row, title, subtitle, trailing, item ->
             Rows.setText(title, getString(R.string.bc_number_title, item.label, item.number))
             Words.dot(title, item.status)
-            Rows.setText(subtitle, null)
+            // The reason in plain words while it can't connect (PLAN S10).
+            Rows.setText(subtitle, item.problem?.let { Words.problem(this, it) })
+            Rows.tone(subtitle, RowTone.Alert)
             val voicemail = if (item.voicemailNew > 0)
                 resources.getQuantityString(R.plurals.bc_voicemail_count, item.voicemailNew, item.voicemailNew) else null
             Rows.setText(trailing, voicemail ?: Words.status(this, item.status))
             Rows.tone(trailing, if (voicemail != null) RowTone.Accent else Words.statusTone(item.status))
             row.setOnClickListener {
-                if (item.status == NumberStatus.NoConnection) Bridges.current.retry(item.id)
+                if (item.problem == NumberProblem.WrongPassword) {
+                    startActivity(Intent(this, NumberSetupActivity::class.java).putExtra(DraftExtras.EXTRA_EDIT_ID, item.id))
+                } else if (item.status == NumberStatus.NoConnection) Bridges.current.retry(item.id)
                 else startActivity(Intent(this, NumbersActivity::class.java))
             }
         }

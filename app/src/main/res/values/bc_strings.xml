@@ -63,6 +63,14 @@
     <!-- Recent-call line: kind, number, time, e.g. "Missed · to Home · 10 min ago". -->
     <string name="bc_recent_line">%1$s · %2$s · %3$s</string>
 
+    <!-- Why a number can't connect (PLAN S10), under the number on Home and Numbers. -->
+    <string name="bc_problem_wrong_password">Wrong extension or password — OK to check it</string>
+    <string name="bc_problem_no_answer">The server isn\'t answering</string>
+    <string name="bc_problem_server_not_found">Can\'t find the server: check its address</string>
+    <string name="bc_problem_no_network">No internet connection</string>
+    <!-- %1$s = the server's own reason, e.g. "503 Service Unavailable". -->
+    <string name="bc_problem_other">Can\'t connect: %1$s</string>
+
     <!-- Menus -->
     <string name="bc_menu_contacts">Contacts</string>
     <string name="bc_menu_calllog">Call log</string>

@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.drawable.Drawable
 import android.text.format.DateFormat
 import android.widget.TextView
+import com.busycall.app.bridge.NumberProblem
 import com.busycall.app.bridge.NumberStatus
 import com.busycall.app.bridge.Transport
 import com.tutpro.baresip.R
@@ -20,6 +21,15 @@ object Words {
             NumberStatus.NotRegistering -> R.string.bc_status_off
         }
     )
+
+    /** Why a number has no connection, in plain words (PLAN S10). */
+    fun problem(ctx: Context, problem: NumberProblem): String = when (problem) {
+        NumberProblem.WrongPassword -> ctx.getString(R.string.bc_problem_wrong_password)
+        NumberProblem.NoAnswer -> ctx.getString(R.string.bc_problem_no_answer)
+        NumberProblem.ServerNotFound -> ctx.getString(R.string.bc_problem_server_not_found)
+        NumberProblem.NoNetwork -> ctx.getString(R.string.bc_problem_no_network)
+        is NumberProblem.Other -> ctx.getString(R.string.bc_problem_other, problem.text)
+    }
 
     fun statusTone(status: NumberStatus): RowTone = when (status) {
         NumberStatus.NoConnection -> RowTone.Alert
