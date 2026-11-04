@@ -189,8 +189,12 @@ object BaresipBridge : Bridge {
         val uap = UserAgent.uaAlloc(line)
         if (uap == 0L) return SaveResult.Failed(SaveProblem.AllocationFailed)
 
-        val ua = UserAgent(uap)
-        ua.add()
+        // Use the agent baresip itself listed. ua_alloc fires baresip's "create" event
+        // synchronously, and BaresipService.uaEvent adds its own UserAgent for this uap; a second
+        // UserAgent(uap) would not be the one in `uas`, so a password set on it would never reach
+        // Account.saveAccounts() and the file would keep upstream's NO_AUTH_PASS placeholder
+        // (401 Unauthorized after the next restart).
+        val ua = UserAgent.ofUap(uap) ?: UserAgent(uap).also { it.add() }
         val acc = ua.account
         acc.nickName = draft.name.trim()
         if (draft.password.isNotEmpty() && Api.account_set_auth_pass(acc.accp, draft.password) == 0) {
