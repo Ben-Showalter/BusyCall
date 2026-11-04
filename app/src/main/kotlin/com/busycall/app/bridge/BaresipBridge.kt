@@ -6,12 +6,17 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.media.AudioManager
+import android.net.Uri
+import android.os.Bundle
+import android.telecom.TelecomManager
 import android.util.Log
 import com.tutpro.baresip.Account
 import com.tutpro.baresip.Api
 import com.tutpro.baresip.BaresipService
 import com.tutpro.baresip.BlockRule
 import com.tutpro.baresip.Blocked
+import com.tutpro.baresip.Call
 import com.tutpro.baresip.CallHistory
 import com.tutpro.baresip.Message
 import com.tutpro.baresip.REGISTRATION_INTERVAL
@@ -116,6 +121,7 @@ object BaresipBridge : Bridge {
                 peerName = name,
                 peerUri = h.peerUri,
                 numberLabel = ua?.account?.nickName?.ifEmpty { null } ?: SipAddress.parse(h.aor).user,
+                numberId = h.aor,
                 direction = if (incoming) CallDirection.In else CallDirection.Out,
                 missed = incoming && h.startTime == null,
                 timeMillis = (h.startTime ?: h.stopTime).timeInMillis,
@@ -255,6 +261,107 @@ object BaresipBridge : Bridge {
 
     override fun retry(id: String) {
         agentOf(id)?.reRegister()
+    }
+
+    // ---- Calls ----
+
+    // Phone (SIM) calls stay with the phone's own dialer (PLAN §5.2), so they're left out.
+    override fun calls(): List<CallUi> = Call.calls().filter { !it.ua.account.isMobile }.map { c ->
+        val acc = c.ua.account
+        val parts = SipAddress.parse(acc.luri.ifEmpty { acc.aor })
+        val label = acc.nickName.ifEmpty { parts.user }
+        CallUi(
+            id = c.callp,
+            peerName = Utils.friendlyUri(c.peerUri, acc),
+            peerUri = c.peerUri,
+            numberLabel = if (label == parts.user) parts.user else "$label · ${parts.user}",
+            incoming = c.dir == "in",
+            state = stateOf(c),
+            durationSec = if (c.status.value == "connected") c.duration() else 0,
+        )
+    }
+
+    /** Upstream's Call.status strings, as BusyCall states. */
+    private fun stateOf(c: Call): CallState = when {
+        c.terminated.value || c.status.value == "closed" -> CallState.Ended
+        c.status.value == "incoming" -> CallState.Ringing
+        c.status.value == "outgoing" -> CallState.Dialing
+        c.status.value == "answered" -> CallState.Connecting
+        c.onhold -> CallState.OnHold
+        else -> CallState.Connected // "connected", "transferring"
+    }
+
+    override fun placeCall(activity: Activity, fromId: String?, dial: String): PlaceResult {
+        if (!isRunning()) return PlaceResult.Failed(PlaceProblem.ServiceNotRunning)
+        val ua = (fromId?.let { agentOf(it) } ?: sipAgents().firstOrNull())
+            ?: return PlaceResult.Failed(PlaceProblem.NoNumber)
+        val text = dial.trim()
+        // Same number-to-address rules as upstream's dialer (MainScreen.makeCall), SIP accounts only.
+        val peerUri = if (Utils.isTelNumber(text)) "tel:$text" else text
+        val uri = if (Utils.isTelUri(peerUri)) Utils.telToSip(peerUri, ua.account) else Utils.uriComplete(peerUri, ua.account.aor)
+        if (!Utils.checkUri(uri)) return PlaceResult.Failed(PlaceProblem.InvalidAddress)
+        // A phone (SIM) call is in progress and none of ours: upstream refuses too.
+        if (Utils.isAudioMode(activity, AudioManager.MODE_IN_CALL) && Call.calls().none { it.ua.uap == ua.uap }) {
+            return PlaceResult.Failed(PlaceProblem.PhoneBusy)
+        }
+        val extras = Bundle()
+        extras.putParcelable(
+            TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE,
+            BaresipService.getPhoneAccountHandle(activity, BaresipService.SIP_ACCOUNT_ID),
+        )
+        val callExtras = Bundle()
+        callExtras.putBoolean("conferenceCall", false)
+        callExtras.putLong("uap", ua.uap)
+        extras.putBundle(TelecomManager.EXTRA_OUTGOING_CALL_EXTRAS, callExtras)
+        return try {
+            val tm = activity.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
+            tm.placeCall(Uri.parse(uri), extras)
+            PlaceResult.Placed
+        } catch (e: SecurityException) {
+            Log.e(TAG, "placeCall failed: ${e.javaClass.simpleName}")
+            PlaceResult.Failed(PlaceProblem.Failed)
+        }
+    }
+
+    /** Upstream's service commands for calls (they also stop ringing and update notifications). */
+    private fun serviceCommand(activity: Activity, action: String, callId: Long) {
+        val call = Call.ofCallp(callId) ?: return
+        val intent = Intent(activity, BaresipService::class.java)
+        intent.action = action
+        intent.putExtra("uap", call.ua.uap)
+        intent.putExtra("callp", callId)
+        try {
+            if (isRunning()) activity.startService(intent) else activity.startForegroundService(intent)
+        } catch (e: Exception) {
+            Log.e(TAG, "$action failed: ${e.javaClass.simpleName}")
+        }
+    }
+
+    override fun answer(activity: Activity, callId: Long) = serviceCommand(activity, "Call Answer", callId)
+    override fun decline(activity: Activity, callId: Long) = serviceCommand(activity, "Call Reject", callId)
+    override fun hangup(activity: Activity, callId: Long) = serviceCommand(activity, "Call Hangup", callId)
+
+    override fun sendDigit(callId: Long, digit: Char) {
+        Call.ofCallp(callId)?.sendDigit(digit)
+    }
+
+    override fun isMuted(): Boolean = BaresipService.isMicMuted
+    override fun setMuted(muted: Boolean) = BaresipService.setMicMute(muted)
+    override fun isSpeakerOn(): Boolean = BaresipService.speakerPhone
+    override fun toggleSpeaker() {
+        BaresipService.instance?.toggleSpeakerphone()
+    }
+
+    override fun hold(callId: Long) {
+        Call.ofCallp(callId)?.hold()
+    }
+
+    override fun resume(callId: Long) {
+        Call.ofCallp(callId)?.resume()
+    }
+
+    override fun silenceRinger() {
+        BaresipService.rt?.stop()
     }
 
     override fun openClassicScreens(activity: Activity, dial: String?) {

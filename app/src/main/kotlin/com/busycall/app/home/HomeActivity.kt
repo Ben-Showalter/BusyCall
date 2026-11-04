@@ -8,10 +8,14 @@ import android.os.Looper
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import com.busycall.app.bridge.BaresipBridge
 import com.busycall.app.bridge.Bridges
 import com.busycall.app.bridge.CallDirection
 import com.busycall.app.bridge.NumberStatus
+import com.busycall.app.bridge.PlaceResult
+import com.busycall.app.call.InCallActivity
+import com.busycall.app.dialer.DialerActivity
 import com.busycall.app.numbers.NumbersActivity
 import com.busycall.app.settings.SettingsActivity
 import com.busycall.app.ui.FlipBaseActivity
@@ -94,15 +98,22 @@ class HomeActivity : FlipBaseActivity() {
         MenuItem(getString(R.string.bc_menu_settings)) { startActivity(Intent(this, SettingsActivity::class.java)) },
     )
 
-    /** Until BusyCall's own Dialer exists, a digit opens upstream's dialer with it typed. */
+    /** A digit opens the Dialer with it typed (on key UP, guide §1). */
     override fun onDigit(char: Char) {
-        if (Bridges.current.isRunning()) Bridges.current.openClassicScreens(this, char.toString())
+        startActivity(Intent(this, DialerActivity::class.java).putExtra(DialerActivity.EXTRA_NUMBER, char.toString()))
     }
 
-    /** CALL on a recent call calls back (through upstream's screens for now). */
+    /** CALL on a recent call calls back, from the number it was on (AGENTS §6). */
     override fun onCallKey() {
-        val uri = currentFocus?.getTag(R.id.bc_row_title) as? String ?: return
-        Bridges.current.openClassicScreens(this, uri)
+        val recent = currentFocus?.getTag(R.id.bc_row_title) as? HomeRecentRow ?: return
+        callBack(recent)
+    }
+
+    private fun callBack(recent: HomeRecentRow) {
+        when (Bridges.current.placeCall(this, recent.numberId, recent.peerUri)) {
+            PlaceResult.Placed -> startActivity(Intent(this, InCallActivity::class.java))
+            is PlaceResult.Failed -> Toast.makeText(this, R.string.bc_dialer_failed, Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun render(state: HomeState) {
@@ -154,8 +165,8 @@ class HomeActivity : FlipBaseActivity() {
             )
             val time = Words.time(this, item.time)
             Rows.setText(subtitle, getString(R.string.bc_recent_line, kind, onNumber, time))
-            row.setTag(R.id.bc_row_title, item.peerUri)
-            row.setOnClickListener { Bridges.current.openClassicScreens(this, item.peerUri) }
+            row.setTag(R.id.bc_row_title, item)
+            row.setOnClickListener { callBack(item) }
         }
         recentsEmpty.visibility = if (state.recents.isEmpty() && state.problem == null) View.VISIBLE else View.GONE
 

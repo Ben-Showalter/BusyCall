@@ -38,11 +38,47 @@ data class RecentUi(
     val peerUri: String,
     /** Which of the user's numbers the call was on. */
     val numberLabel: String,
+    /** That number's id, to call back from it (AGENTS §6). */
+    val numberId: String,
     val direction: CallDirection,
     val missed: Boolean,
     /** When the call happened, epoch millis; null if unknown. */
     val timeMillis: Long?,
 )
+
+/** A call's state, as the screens show it. */
+enum class CallState {
+    /** Incoming, not answered yet. */
+    Ringing,
+    /** Outgoing, not answered yet. */
+    Dialing,
+    /** Answered, audio starting. */
+    Connecting,
+    Connected,
+    OnHold,
+    Ended,
+}
+
+/** One call, display-ready except for the duration (formatted by the view model). */
+data class CallUi(
+    /** baresip's call pointer: stable while the call exists. */
+    val id: Long,
+    val peerName: String,
+    val peerUri: String,
+    /** Which of the user's numbers the call is on ("Office · 104"). */
+    val numberLabel: String,
+    val incoming: Boolean,
+    val state: CallState,
+    val durationSec: Int,
+)
+
+/** Why a call couldn't be placed; each maps to a plain-language message. */
+enum class PlaceProblem { ServiceNotRunning, NoNumber, InvalidAddress, PhoneBusy, Failed }
+
+sealed class PlaceResult {
+    object Placed : PlaceResult()
+    data class Failed(val problem: PlaceProblem) : PlaceResult()
+}
 
 /** What the user typed or a setup code contained, before it becomes a baresip account. */
 data class NumberDraft(
@@ -97,6 +133,28 @@ interface Bridge {
     fun setDefault(id: String)
     /** Registers again (Retry after "No connection"). */
     fun retry(id: String)
+
+    // ---- Calls (all through upstream's own call functions) ----
+
+    /** All current calls, newest last. */
+    fun calls(): List<CallUi>
+
+    /** Places a call to [dial] (a number or SIP address) from number [fromId] (null = ★ default). */
+    fun placeCall(activity: Activity, fromId: String?, dial: String): PlaceResult
+
+    fun answer(activity: Activity, callId: Long)
+    fun decline(activity: Activity, callId: Long)
+    fun hangup(activity: Activity, callId: Long)
+    /** Sends one keypad tone (0-9, *, #) on the call. */
+    fun sendDigit(callId: Long, digit: Char)
+    fun isMuted(): Boolean
+    fun setMuted(muted: Boolean)
+    fun isSpeakerOn(): Boolean
+    fun toggleSpeaker()
+    fun hold(callId: Long)
+    fun resume(callId: Long)
+    /** Stops the ringtone of an incoming call without declining it. */
+    fun silenceRinger()
 }
 
 object Bridges {

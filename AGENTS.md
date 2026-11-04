@@ -134,8 +134,9 @@ The full key table is `PLAN.md §3.1`. In code:
   Settings › Advanced can still change the side by hand.
 - **Dialer matching (PLAN §3.3):** digits match numbers **and** names by the
   letters on the keys (2=ABC … 9=WXYZ). **There is no letter-typing mode:**
-  don't add an abc toggle, a text `inputType`, or a T9 keyboard. The field is
-  `inputType="phone"` with `stateAlwaysHidden` (guide §3). Matching runs on a
+  don't add an abc toggle, a text `inputType`, or a T9 keyboard. The number is a
+  plain display (`TextView`) fed by the keypad through `FlipBaseActivity`, so no
+  keyboard session ever starts (avoids the E4811 IME bug, guide §3). Matching runs on a
   background thread over a cached index (each name pre-converted to its digit
   string per word); never query ContactsProvider per keypress.
 - **Digits from Home or a list open the Dialer on key UP** (guide: "Digits that

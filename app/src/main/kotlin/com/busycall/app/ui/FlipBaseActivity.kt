@@ -1,13 +1,22 @@
 package com.busycall.app.ui
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import com.busycall.app.bridge.Bridges
+import com.busycall.app.bridge.CallState
+import com.busycall.app.call.CallRouter
+import com.busycall.app.call.CallText
+import com.busycall.app.call.InCallActivity
+import com.busycall.app.call.IncomingCallActivity
 import com.busycall.app.data.Prefs
 import com.busycall.app.keys.KeyRouter
 import com.busycall.app.keys.LogicalKey
@@ -26,6 +35,10 @@ import com.tutpro.baresip.R
  * - OK/CENTER is left to the focused view (a row's click). BACK keeps normal back navigation.
  * - Digits go to the focused text field when there is one, otherwise to [onDigit].
  * - Unknown keys are shown on screen so new phones can be learned (guide §7).
+ * - END is never consumed: [onEndKeyDown] runs first, then the system does what END does
+ *   (PLAN §3.4).
+ * - While a call is active, the "On call · 03:42" bar (`bc_oncall`, if the layout has it)
+ *   shows on every screen; OK or a tap returns to the call (AGENTS §4).
  *
  * Layouts include `bc_footer` (ids `bc_footer`, `bc_footer_hint`, `bc_footer_options`).
  * Plain [Activity], not AppCompat: no options panel, nothing that grabs MENU.
@@ -37,6 +50,12 @@ abstract class FlipBaseActivity : Activity() {
 
     /** A digit, `*` or `#` released while no text field has focus. */
     protected open fun onDigit(char: Char) {}
+
+    /** A digit, `*` or `#` pressed (first DOWN only), before [onDigit]: keypad tones, hold timers. */
+    protected open fun onDigitDown(char: Char) {}
+
+    /** END pressed. Runs before the system's own END handling, which always follows. */
+    protected open fun onEndKeyDown() {}
 
     /**
      * True on screens that use CALL (Dialer, lists of people, call screens). Elsewhere CALL is
@@ -53,6 +72,15 @@ abstract class FlipBaseActivity : Activity() {
     // Keys whose DOWN this window saw and consumed, by keycode.
     private val pressed = HashSet<Int>()
 
+    private val barHandler = Handler(Looper.getMainLooper())
+    private var barRunning = false
+    private val barTick = object : Runnable {
+        override fun run() {
+            updateOnCallBar()
+            if (barRunning) barHandler.postDelayed(this, 1000L)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.decorView.viewTreeObserver.addOnGlobalFocusChangeListener { _, newFocus ->
@@ -65,11 +93,36 @@ abstract class FlipBaseActivity : Activity() {
         super.onResume()
         SystemBars.hideNavigation(this)
         placeOptionsLabel()
+        if (findViewById<View>(R.id.bc_oncall) != null) {
+            barRunning = true
+            barHandler.removeCallbacks(barTick)
+            barTick.run()
+        }
     }
 
     override fun onPause() {
         pressed.clear()
+        barRunning = false
+        barHandler.removeCallbacks(barTick)
         super.onPause()
+    }
+
+    /** Shows or hides the "On call" bar; OK or a tap on it returns to the call. */
+    private fun updateOnCallBar() {
+        val bar = findViewById<TextView>(R.id.bc_oncall) ?: return
+        val call = Bridges.current.calls().lastOrNull { it.state != CallState.Ended }
+        if (call == null) {
+            if (bar.visibility != View.GONE) bar.visibility = View.GONE
+            return
+        }
+        val ringing = call.state == CallState.Ringing
+        bar.text = if (ringing) getString(R.string.bc_oncall_ringing, call.peerName)
+        else getString(R.string.bc_oncall_bar, CallText.duration(call.durationSec), call.peerName)
+        bar.setOnClickListener {
+            val target = if (ringing) IncomingCallActivity::class.java else InCallActivity::class.java
+            startActivity(Intent(this, target).putExtra(CallRouter.EXTRA_CALL_ID, call.id))
+        }
+        if (bar.visibility != View.VISIBLE) bar.visibility = View.VISIBLE
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -92,6 +145,8 @@ abstract class FlipBaseActivity : Activity() {
         val down = event.action == KeyEvent.ACTION_DOWN
         val up = event.action == KeyEvent.ACTION_UP
         val typing = currentFocus is EditText
+
+        if (key == LogicalKey.End && down && event.repeatCount == 0) onEndKeyDown()
 
         when (key) {
             LogicalKey.Menu -> {
@@ -134,7 +189,10 @@ abstract class FlipBaseActivity : Activity() {
         }
         if (ownsKey) {
             if (down) {
-                if (event.repeatCount == 0) pressed.add(event.keyCode)
+                if (event.repeatCount == 0) {
+                    pressed.add(event.keyCode)
+                    if (key is LogicalKey.Digit) onDigitDown(key.char)
+                }
                 return true
             }
             if (up && pressed.remove(event.keyCode) && !event.isCanceled) {

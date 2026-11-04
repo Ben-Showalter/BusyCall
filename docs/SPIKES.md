@@ -27,6 +27,15 @@ What stands between upstream and older Android versions:
 - **Android 7 (API 24):** both big changes above. Needed only for phones like
   the E4610.
 
+**First run on hardware (2026-11-04, Kyocera E4810, Grandstream UCM):** the fork builds in
+Android Studio (native libraries from the `native-libs-94.1.5-1` release), installs as
+BusyCall, registers a UCM extension added with BusyCall's own Number setup, and places an
+outgoing call with audio. **Keypad tones failed on upstream's in-call screen**: it sends DTMF
+only from a small Compose text field beside the hang-up button (`MainScreen.kt` ~L2140),
+which keys on a keypad phone never reach. The backend path (`Call.sendDigit` →
+`Api.call_send_digit`) is fine, so BusyCall's own In-call screen sends digits straight from
+the keys. Still to test: incoming calls, CALL/END (S2), idle re-registration (S3).
+
 **Decision (owner, 2026-11-04): stay on Android 9 (`minSdk 28`), as upstream.**
 Android 7 support is out of scope for now; the notes above stay as the starting
 point if it comes back.

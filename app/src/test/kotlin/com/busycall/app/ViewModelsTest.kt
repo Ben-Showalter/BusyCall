@@ -48,7 +48,7 @@ class ViewModelsTest {
         val now = ZonedDateTime.of(2026, 11, 4, 12, 0, 0, 0, zone).toInstant().toEpochMilli()
         val bridge = FakeBridge(
             numbers = mutableListOf(office, school),
-            recents = mutableListOf(RecentUi("Mom", "sip:5550142@pbx", "Home", CallDirection.In, true, now - 10 * 60_000)),
+            recents = mutableListOf(RecentUi("Mom", "sip:5550142@pbx", "Home", "sip:5550142@pbx;transport=udp", CallDirection.In, true, now - 10 * 60_000)),
         )
         val state = HomeViewModel(bridge, now = { now }, zone = { zone }).state()
         assertNull(state.problem)

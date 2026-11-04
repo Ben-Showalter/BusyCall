@@ -30,6 +30,7 @@ class HomeViewModel(
                     peerName = it.peerName,
                     peerUri = it.peerUri,
                     numberLabel = it.numberLabel,
+                    numberId = it.numberId,
                     direction = it.direction,
                     missed = it.missed,
                     time = TimeText.label(it.timeMillis, nowMillis, zoneId),

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "On call · 03:42 · Anna" bar, shown under the title on every screen while a call is
+     active (FlipBaseActivity). Focusable and tappable: OK returns to the call. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/bc_oncall"
+    style="@style/BcText"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="@dimen/bc_row_min_height"
+    android:background="@drawable/bc_button_call"
+    android:clickable="true"
+    android:focusable="true"
+    android:focusableInTouchMode="false"
+    android:gravity="center_vertical"
+    android:paddingStart="@dimen/bc_gutter"
+    android:paddingEnd="@dimen/bc_gutter"
+    android:textColor="@color/bc_text_on_bar"
+    android:visibility="gone" />

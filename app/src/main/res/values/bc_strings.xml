@@ -141,6 +141,63 @@
     <string name="bc_found_edit">Change details</string>
     <string name="bc_found_check">Check the details, then press Save again.</string>
 
+    <!-- Calls -->
+    <string name="bc_incoming_title">Incoming call</string>
+    <!-- Keys on the incoming-call screen. -->
+    <string name="bc_incoming_hint">CALL answers · END declines · BACK silences</string>
+    <string name="bc_call_answer">Answer</string>
+    <string name="bc_call_decline">Decline</string>
+    <!-- Stops the ringtone without declining. -->
+    <string name="bc_call_silence">Silence ringer</string>
+    <!-- Which of the user's numbers is being called. %1$s = "Office · 104". -->
+    <string name="bc_call_to">to %1$s</string>
+    <!-- Which of the user's numbers the call goes out from. %1$s = "Office · 104". -->
+    <string name="bc_call_from">from %1$s</string>
+    <!-- Title while calling. -->
+    <string name="bc_call_dialing">Calling…</string>
+    <string name="bc_call_connecting">Connecting…</string>
+    <!-- Title during a call. %1$s = timer, e.g. "03:42". -->
+    <string name="bc_call_on_call">On call · %1$s</string>
+    <!-- %1$s = timer -->
+    <string name="bc_call_on_hold">On hold · %1$s</string>
+    <!-- Keypad tones sent so far. %1$s = digits, e.g. "1234#". -->
+    <string name="bc_call_sent">Sent: %1$s</string>
+    <!-- Button labels; short, three fit side by side at 240 px. -->
+    <string name="bc_call_speaker">Speaker</string>
+    <string name="bc_call_speaker_is_on">Speaker on</string>
+    <string name="bc_call_mute">Mute</string>
+    <string name="bc_call_muted">Muted</string>
+    <string name="bc_call_hold">Hold</string>
+    <string name="bc_call_resume">Resume</string>
+    <string name="bc_call_end">End call</string>
+    <string name="bc_call_speaker_on">Speaker on</string>
+    <string name="bc_call_speaker_off">Speaker off</string>
+    <string name="bc_call_unmute">Unmute</string>
+    <string name="bc_call_hang_up">Hang up</string>
+    <string name="bc_incall_hint">0–9 send tones · END hangs up</string>
+    <string name="bc_incall_footer">BACK keeps the call</string>
+    <string name="bc_call_did_not_start">The call didn\'t start. Check that the number is connected, then try again.</string>
+    <!-- Bar on other screens during a call. %1$s timer, %2$s who. -->
+    <string name="bc_oncall_bar">On call · %1$s · %2$s</string>
+    <!-- Bar on other screens while a call rings. %1$s = who. -->
+    <string name="bc_oncall_ringing">Incoming call · %1$s</string>
+
+    <!-- Dialer -->
+    <string name="bc_dialer_title">New call</string>
+    <string name="bc_dialer_number">Number</string>
+    <string name="bc_dialer_from_label">Call from</string>
+    <!-- The chosen number with arrows showing it can be changed. %1$s = "Office · 104". -->
+    <string name="bc_dialer_from_arrows">◀ %1$s ▶</string>
+    <string name="bc_dialer_from_menu">Call from…</string>
+    <string name="bc_dialer_call">Call</string>
+    <string name="bc_dialer_clear">Clear number</string>
+    <string name="bc_dialer_footer">CALL dials · CLEAR deletes</string>
+    <string name="bc_dialer_type_number">Type a number first.</string>
+    <string name="bc_dialer_no_numbers">No number to call from: add one in Numbers.</string>
+    <string name="bc_dialer_invalid">That isn\'t a number or address BusyCall can call.</string>
+    <string name="bc_dialer_phone_busy">A phone call is in progress. Finish it first.</string>
+    <string name="bc_dialer_failed">The call couldn\'t be started. Check the number\'s connection, then try again.</string>
+
     <!-- Settings -->
     <string name="bc_settings_title">Settings</string>
     <string name="bc_settings_options_side">Options key</string>
