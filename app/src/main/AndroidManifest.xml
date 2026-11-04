@@ -128,6 +128,29 @@
             android:exported="false"
             android:theme="@style/Theme.BusyCall" />
         <activity
+            android:name="com.busycall.app.dialer.DialerActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize"
+            android:exported="false"
+            android:theme="@style/Theme.BusyCall"
+            android:windowSoftInputMode="stateAlwaysHidden" />
+        <!-- Shows over the lock screen and a closed flip, and turns the screen on (guide §5). -->
+        <activity
+            android:name="com.busycall.app.call.IncomingCallActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTop"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:theme="@style/Theme.BusyCall" />
+        <activity
+            android:name="com.busycall.app.call.InCallActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:showWhenLocked="true"
+            android:theme="@style/Theme.BusyCall" />
+        <activity
             android:name="com.busycall.app.settings.SettingsActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize"
             android:exported="false"

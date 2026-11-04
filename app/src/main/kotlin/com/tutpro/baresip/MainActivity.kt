@@ -38,6 +38,8 @@ import kotlin.system.exitProcess
 class MainActivity : ComponentActivity() {
 
     private lateinit var nm: NotificationManager
+    // BusyCall: true when onCreate only handed the intent to BusyCall's screens (UPSTREAM.md).
+    private var routedToBusyCall = false
     private lateinit var am: AudioManager
     private lateinit var kgm: KeyguardManager
     private lateinit var screenEventReceiver: BroadcastReceiver
@@ -59,6 +61,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
+
+        // BusyCall: call events go to BusyCall's own call screens (UPSTREAM.md).
+        if (com.busycall.app.call.CallRouter.route(this, intent)) { routedToBusyCall = true; finish(); return }
 
         val extraAction = intent.getStringExtra("action")
         Log.i(TAG, "Main onCreate ${intent.action}/${intent.data}/$extraAction")
@@ -338,6 +343,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         Log.d(TAG, "Main onDestroy")
+        // BusyCall: onCreate returned early (routed), so none of the cleanup below was set up.
+        if (routedToBusyCall) { super.onDestroy(); return }
 
         this.unregisterReceiver(screenEventReceiver)
 
@@ -354,6 +361,9 @@ class MainActivity : ComponentActivity() {
         // Called when MainActivity already exists at the top of current task
         super.onNewIntent(intent)
         setIntent(intent)
+
+        // BusyCall: call events go to BusyCall's own call screens (UPSTREAM.md).
+        if (com.busycall.app.call.CallRouter.route(this, intent)) { finish(); return }
 
         this.setShowWhenLocked(Call.inCall())
         this.setTurnScreenOn(Call.inCall())
