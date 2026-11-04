@@ -1164,6 +1164,7 @@ class BaresipService: Service() {
 
                     "registering", "unregistering" -> {
                         if (ev[0] == "unregistering") registrationRetries.remove(uap)
+                        if (ev[0] == "unregistering") registrationFailures.remove(aor) // BusyCall
                         ua.updateStatus(circleYellow.getValue(colorblind))
                         updateStatusNotification()
                         if (isMainVisible) registrationUpdate.postValue(System.currentTimeMillis())
@@ -1172,6 +1173,7 @@ class BaresipService: Service() {
 
                     "registered" -> {
                         registrationRetries.remove(uap)
+                        registrationFailures.remove(aor) // BusyCall
                         ua.updateStatus(
                             if (Api.account_regint(ua.account.accp) == 0)
                                 R.drawable.circle_white
@@ -1199,6 +1201,7 @@ class BaresipService: Service() {
                             }
                         }
                         registrationRetries.remove(uap)
+                        registrationFailures[aor] = ev.getOrNull(1) ?: "" // BusyCall: reason shown on screen
                         ua.updateStatus(
                             if (Api.account_regint(ua.account.accp) == 0)
                                 R.drawable.circle_white
@@ -3674,6 +3677,8 @@ class BaresipService: Service() {
 
         // <aor, password> of those accounts that have auth username without auth password
         val aorPasswords = mutableMapOf<String, String>()
+        // BusyCall: <aor, reason> of the last failed registration, cleared when registered
+        val registrationFailures = java.util.concurrent.ConcurrentHashMap<String, String>()
         var aecAvailable = false
         var agcAvailable = false
         var nsAvailable = false
