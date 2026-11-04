@@ -99,3 +99,5 @@ dependencies {
 
 // BusyCall: download prebuilt native libraries into distribution/ (see BUILDING.md).
 apply(from = rootProject.file("gradle/native-libs.gradle.kts"))
+// BusyCall: our own build additions (test dependencies).
+apply(from = rootProject.file("gradle/busycall.gradle.kts"))

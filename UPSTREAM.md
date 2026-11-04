@@ -22,6 +22,8 @@ upstream PR if one was offered. Keep each change as small as possible.
 |---|---|---|---|
 | `app/build.gradle.kts` | `applicationId` `com.tutpro.baresip` → `com.busycall.app` | Installs next to the real baresip app instead of replacing it. `namespace` stays `com.tutpro.baresip` so upstream code compiles and merges unchanged. | No (fork-only) |
 | `app/build.gradle.kts` | One `apply(from = "gradle/native-libs.gradle.kts")` line at the end | Downloads the prebuilt native libraries into `distribution/` so the app builds in Android Studio on Windows. All the logic is in our own file (`gradle/native-libs.gradle.kts`); see BUILDING.md. | No (fork-only) |
+| `app/src/main/AndroidManifest.xml` | Removed MAIN/LAUNCHER from `.MainActivity`; added BusyCall's activities (`com.busycall.app.*`), with HomeActivity as the launcher | BusyCall's own screens replace upstream's UI step by step. `MainActivity` and its other intent filters (dial, call, links) stay, so calls still work through upstream's screens until ours exist (Home › Options › Classic screens). | No (fork-only) |
+| `app/build.gradle.kts` | One more `apply(from = "gradle/busycall.gradle.kts")` line | JUnit for BusyCall's unit tests (`app/src/test/kotlin`) | No (fork-only) |
 | `app/src/main/res/values/strings.xml` | `app_name` `baresip` → `BusyCall` | Launcher, notification and phone-account name. The other "baresip" strings credit the library and stay. Untranslatable, so no translation files change. | No (fork-only) |
 
 ## Notes

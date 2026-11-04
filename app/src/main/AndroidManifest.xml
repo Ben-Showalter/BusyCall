@@ -76,10 +76,7 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize" >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            <!-- BusyCall: MAIN/LAUNCHER moved to com.busycall.app.home.HomeActivity (UPSTREAM.md). -->
             <intent-filter>
                 <action android:name="android.intent.action.DIAL" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -99,6 +96,42 @@
                 <data android:mimeType="vnd.android.cursor.dir/calls" />
             </intent-filter>
         </activity>
+
+        <!-- BusyCall's own screens (com.busycall.app). The flip opening/closing or a rotation must
+             not recreate them (guide §4). -->
+        <activity
+            android:name="com.busycall.app.home.HomeActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.BusyCall">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.busycall.app.numbers.NumbersActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize"
+            android:exported="false"
+            android:theme="@style/Theme.BusyCall" />
+        <activity
+            android:name="com.busycall.app.numbers.NumberSetupActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize"
+            android:exported="false"
+            android:theme="@style/Theme.BusyCall"
+            android:windowSoftInputMode="adjustResize|stateHidden" />
+        <activity
+            android:name="com.busycall.app.numbers.setup.SetupFoundActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize"
+            android:exported="false"
+            android:theme="@style/Theme.BusyCall" />
+        <activity
+            android:name="com.busycall.app.settings.SettingsActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize"
+            android:exported="false"
+            android:theme="@style/Theme.BusyCall" />
 
         <activity
             android:name=".ComposeActivity"
