@@ -50,3 +50,23 @@ class ScanTest {
         assertEquals(ScanOutcome.Incomplete(SetupCodeParser.Field.Server), vm.onDecoded("busycall:add?v=1&user=104"))
     }
 }
+
+class ScanLayoutTest {
+
+    @Test fun `portrait phone, 640x480 camera turned upright, fits the width`() {
+        // 240×180 area (above the button) vs a 480×640 upright picture: height limits it.
+        assertEquals(135 to 180, ScanLayout.fit(240, 180, 640, 480, rotated = true))
+        // A tall area: width limits it.
+        assertEquals(240 to 320, ScanLayout.fit(240, 400, 640, 480, rotated = true))
+    }
+
+    @Test fun `landscape picture not rotated`() {
+        assertEquals(320 to 240, ScanLayout.fit(320, 300, 640, 480, rotated = false))
+        assertEquals(200 to 150, ScanLayout.fit(400, 150, 640, 480, rotated = false))
+    }
+
+    @Test fun `unknown sizes use the whole area`() {
+        assertEquals(240 to 180, ScanLayout.fit(240, 180, 0, 0, rotated = true))
+        assertEquals(0 to 0, ScanLayout.fit(0, 0, 640, 480, rotated = false))
+    }
+}

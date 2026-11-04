@@ -9,6 +9,8 @@ Everywhere (`ui/FlipBaseActivity`): while a call is active, an **"On call · 03:
 MENU press, or Settings › Options key). The footer's "Options" label is also tappable.
 OK activates the focused row or button. BACK goes back (Clear is BACK on Kyocera). Unknown
 keys show "Unhandled key N (scan M)". Actions fire on key UP.
+Menus and confirmations are `AlertDialog`s drawn as a rounded dark card with an accent-red
+title (and an optional question under it); the selected row gets the red focus ring.
 
 ## S1 Home (`home/HomeActivity`) — launcher
 - **Shows:** "My numbers": each number as `Name · extension` with a status dot and either its
@@ -28,16 +30,18 @@ keys show "Unhandled key N (scan M)". Actions fire on key UP.
 - **OK on a number:** menu Edit · Make default ★ (not on the default) · Retry (when not
   registered) · Delete (confirm).
 - **OK on Phone (SIM):** the phone's dialer (`ACTION_DIAL`), nothing else.
-- **+ Add a number:** menu Type it in · Paste setup link · Scan QR setup code (only on phones
-  with a camera).
-- **Scan QR setup code** first asks (S7b) "Do you have a QR setup code ready?": **Yes, scan it**
-  (scan screen) · **No, help me set it up** (S7c).
+- **+ Add a number:** menu "Add a number", each row with an icon and a grey hint:
+  ✎ Type it in "Server, extension, password" · 🔗 Paste setup link "Copied from a text or
+  email" · ▦ Scan QR setup code "Uses the camera" (only on phones with a camera).
+- **Scan QR setup code** first asks (S7b): menu "Scan QR setup code", question "Do you have a
+  QR setup code ready?", then **Yes, scan it** (scan screen) · **No, help me set it up** (S7c).
 - **Paste setup link:** reads the clipboard, clears it, opens S7a; or a plain message: nothing
   copied / not a BusyCall setup link / newer version / missing server or extension.
 - **Options:** + Add a number · Settings.
 
 ## Scan setup code (`numbers/setup/ScanActivity`)
-- **Shows:** the camera preview; a status line ("Point the camera at the QR setup code…");
+- **Shows:** the camera preview at its own shape (black bars where it doesn't fill); a status
+  line laid over the bottom of the picture ("Point the camera at the QR setup code…");
   **Scan again** (focused; **Retry** when the camera isn't open).
 - **Keys:** OK / tap = scan again (refocus, clear the message). BACK cancels.
 - A setup code opens S7a and closes the scanner. Anything else: "That QR code isn't a BusyCall

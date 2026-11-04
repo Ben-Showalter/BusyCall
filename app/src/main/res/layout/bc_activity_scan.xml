@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Scan QR setup code (PLAN.md §5.1): camera preview, one status line, Scan again / Retry. -->
+<!-- Scan QR setup code (PLAN.md §5.1): camera preview with a status line over it, Scan again / Retry. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -8,26 +8,38 @@
 
     <include layout="@layout/bc_titlebar" />
 
-    <SurfaceView
-        android:id="@+id/bc_scan_preview"
+    <!-- The picture keeps its shape (ScanActivity sizes the SurfaceView to the camera's ratio);
+         black bars fill the rest. The message is laid over the bottom, not below it. -->
+    <FrameLayout
+        android:id="@+id/bc_scan_area"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:clickable="true"
-        android:focusable="false" />
+        android:background="@android:color/black">
 
-    <!-- Fixed height so the preview doesn't jump when the message changes (guide §4). -->
-    <TextView
-        android:id="@+id/bc_scan_status"
-        style="@style/BcText"
-        android:layout_width="match_parent"
-        android:layout_height="58dp"
-        android:ellipsize="end"
-        android:gravity="center_vertical"
-        android:maxLines="3"
-        android:paddingStart="@dimen/bc_gutter"
-        android:paddingEnd="@dimen/bc_gutter"
-        android:textSize="@dimen/bc_text_label" />
+        <SurfaceView
+            android:id="@+id/bc_scan_preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:clickable="true"
+            android:focusable="false" />
+
+        <TextView
+            android:id="@+id/bc_scan_status"
+            style="@style/BcText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:background="@drawable/bc_scrim"
+            android:ellipsize="end"
+            android:maxLines="3"
+            android:paddingStart="@dimen/bc_gutter"
+            android:paddingTop="4dp"
+            android:paddingEnd="@dimen/bc_gutter"
+            android:paddingBottom="4dp"
+            android:textSize="@dimen/bc_text_label" />
+    </FrameLayout>
 
     <TextView
         android:id="@+id/bc_scan_again"
@@ -36,6 +48,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/bc_gutter"
         android:layout_marginEnd="@dimen/bc_gutter"
+        android:layout_marginTop="4dp"
         android:layout_marginBottom="4dp"
         android:stateListAnimator="@null"
         android:text="@string/bc_scan_again" />

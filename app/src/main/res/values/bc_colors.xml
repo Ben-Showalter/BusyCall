@@ -7,6 +7,8 @@
     <color name="bc_surface">#FF1C1C1E</color>
     <color name="bc_surface_dialog">#FF26262A</color>
     <color name="bc_line">#FF3A3A3E</color>
+    <!-- Behind text over the camera picture. -->
+    <color name="bc_scrim">#CC000000</color>
 
     <color name="bc_text">#FFF2F2F2</color>
     <color name="bc_text_on_bar">#FFFFFFFF</color>

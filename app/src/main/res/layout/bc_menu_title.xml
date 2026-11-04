@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Menu title (accent red, as in the previews) and an optional question under it. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="16dp"
+    android:paddingTop="10dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="4dp">
+
+    <TextView
+        android:id="@+id/bc_menu_title"
+        style="@style/BcText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxLines="2"
+        android:textColor="@color/bc_accent"
+        android:textSize="@dimen/bc_text_header" />
+
+    <TextView
+        android:id="@+id/bc_menu_message"
+        style="@style/BcText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxLines="8"
+        android:paddingTop="4dp"
+        android:paddingBottom="2dp"
+        android:visibility="gone" />
+</LinearLayout>

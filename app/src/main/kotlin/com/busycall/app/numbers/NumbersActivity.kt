@@ -154,23 +154,30 @@ class NumbersActivity : FlipBaseActivity() {
         Menus.show(this, getString(R.string.bc_number_title, row.label, row.number), items)
     }
 
+    /** "+ Add a number" (PLAN S7, as in the preview): icon, label and a short hint per row. */
     private fun showAddMenu() {
-        Menus.show(this, getString(R.string.bc_numbers_add), buildList {
-            add(MenuItem(getString(R.string.bc_add_type)) { startActivity(Intent(this@NumbersActivity, NumberSetupActivity::class.java)) })
-            add(MenuItem(getString(R.string.bc_add_paste)) { pasteSetupLink() })
+        Menus.show(this, getString(R.string.bc_numbers_add_title), buildList {
+            add(MenuItem(getString(R.string.bc_add_type), getString(R.string.bc_add_type_sub), R.drawable.bc_ic_edit) {
+                startActivity(Intent(this@NumbersActivity, NumberSetupActivity::class.java))
+            })
+            add(MenuItem(getString(R.string.bc_add_paste), getString(R.string.bc_add_paste_sub), R.drawable.bc_ic_link) {
+                pasteSetupLink()
+            })
             // Hidden on phones without a camera (AGENTS §6a).
             if (packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
-                add(MenuItem(getString(R.string.bc_add_scan)) { askCodeReady() })
+                add(MenuItem(getString(R.string.bc_add_scan), getString(R.string.bc_add_scan_sub), R.drawable.bc_ic_qr) {
+                    askCodeReady()
+                })
             }
         })
     }
 
     /** S7b: always ask first; "No" opens Make a setup code, never the camera (AGENTS §6a). */
     private fun askCodeReady() {
-        Menus.show(this, getString(R.string.bc_scan_ready_title), listOf(
+        Menus.show(this, getString(R.string.bc_add_scan), listOf(
             MenuItem(getString(R.string.bc_scan_ready_yes)) { startActivity(Intent(this, ScanActivity::class.java)) },
             MenuItem(getString(R.string.bc_scan_ready_no)) { startActivity(Intent(this, SetupHelpActivity::class.java)) },
-        ))
+        ), message = getString(R.string.bc_scan_ready_title))
     }
 
     private fun pasteSetupLink() {

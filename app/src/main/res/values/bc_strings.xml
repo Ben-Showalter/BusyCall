@@ -76,6 +76,8 @@
     <string name="bc_numbers_hint">★ = the number the Dialer calls from</string>
     <string name="bc_numbers_footer">OK for choices</string>
     <string name="bc_numbers_add">+ Add a number</string>
+    <!-- Title of the Add a number menu. -->
+    <string name="bc_numbers_add_title">Add a number</string>
     <string name="bc_number_edit">Edit</string>
     <string name="bc_number_make_default">Make default ★</string>
     <string name="bc_number_delete">Delete</string>
@@ -90,8 +92,12 @@
     <string name="bc_add_type">Type it in</string>
     <string name="bc_add_paste">Paste setup link</string>
     <string name="bc_add_scan">Scan QR setup code</string>
+    <!-- Grey hints under the Add a number choices. -->
+    <string name="bc_add_type_sub">Server, extension, password</string>
+    <string name="bc_add_paste_sub">Copied from a text or email</string>
+    <string name="bc_add_scan_sub">Uses the camera</string>
 
-    <!-- S7b: asked before the camera opens. -->
+    <!-- S7b: asked before the camera opens (the menu's title is bc_add_scan). -->
     <string name="bc_scan_ready_title">Do you have a QR setup code ready?</string>
     <string name="bc_scan_ready_yes">Yes, scan it</string>
     <string name="bc_scan_ready_no">No, help me set it up</string>

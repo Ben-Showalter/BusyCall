@@ -11,6 +11,8 @@ import android.os.Looper
 import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import android.view.View
+import android.widget.FrameLayout
 import android.widget.TextView
 import com.busycall.app.numbers.DraftExtras
 import com.busycall.app.ui.FlipBaseActivity
@@ -31,6 +33,8 @@ class ScanActivity : FlipBaseActivity(), SurfaceHolder.Callback, Camera.PreviewC
     private val viewModel = ScanViewModel()
     private val main = Handler(Looper.getMainLooper())
     private lateinit var preview: SurfaceView
+    private lateinit var area: View
+    private var rotated = false
     private lateinit var status: TextView
     private lateinit var again: TextView
 
@@ -51,6 +55,11 @@ class ScanActivity : FlipBaseActivity(), SurfaceHolder.Callback, Camera.PreviewC
         findViewById<TextView>(R.id.bc_title).setText(R.string.bc_scan_title)
         setFooterHint(getString(R.string.bc_scan_footer))
         preview = findViewById(R.id.bc_scan_preview)
+        area = findViewById(R.id.bc_scan_area)
+        // The flip or a rotation changes the area: keep the picture's shape.
+        area.addOnLayoutChangeListener { _, l, t, r, b, ol, ot, or_, ob ->
+            if (r - l != or_ - ol || b - t != ob - ot) area.post { sizePreview() }
+        }
         status = findViewById(R.id.bc_scan_status)
         again = findViewById(R.id.bc_scan_again)
         again.paint.isFakeBoldText = true
@@ -134,7 +143,9 @@ class ScanActivity : FlipBaseActivity(), SurfaceHolder.Callback, Camera.PreviewC
             val used = cam.parameters.previewSize
             previewWidth = used.width
             previewHeight = used.height
-            cam.setDisplayOrientation(displayOrientation(cameraId))
+            val orientation = displayOrientation(cameraId)
+            rotated = orientation == 90 || orientation == 270
+            cam.setDisplayOrientation(orientation)
             cam.setPreviewDisplay(preview.holder)
             val thread = HandlerThread("BusyCallQr").also { it.start() }
             decodeThread = thread
@@ -142,6 +153,7 @@ class ScanActivity : FlipBaseActivity(), SurfaceHolder.Callback, Camera.PreviewC
             cam.setPreviewCallback(this)
             cam.startPreview()
             camera = cam
+            sizePreview()
             if (modes.contains(Camera.Parameters.FOCUS_MODE_AUTO) &&
                 params.focusMode == Camera.Parameters.FOCUS_MODE_AUTO
             ) autoFocus()
@@ -154,6 +166,18 @@ class ScanActivity : FlipBaseActivity(), SurfaceHolder.Callback, Camera.PreviewC
     }
 
     private var cameraId = 0
+
+    /** Fits the SurfaceView to the camera picture's ratio inside the preview area (no squash). */
+    private fun sizePreview() {
+        if (camera == null) return
+        val (w, h) = ScanLayout.fit(area.width, area.height, previewWidth, previewHeight, rotated)
+        val params = preview.layoutParams as FrameLayout.LayoutParams
+        if (params.width != w || params.height != h) {
+            params.width = w
+            params.height = h
+            preview.layoutParams = params
+        }
+    }
 
     private fun openBackCamera(): Camera? {
         val info = Camera.CameraInfo()
