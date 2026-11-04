@@ -37,7 +37,7 @@
                 android:layout_height="wrap_content"
                 android:background="@drawable/bc_field"
                 android:ellipsize="start"
-                android:gravity="center_vertical|end"
+                android:gravity="center_vertical|start"
                 android:minHeight="44dp"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"
