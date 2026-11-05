@@ -108,6 +108,8 @@ data class NumberDraft(
     val password: String = "",
     val transport: Transport = Transport.UDP,
     val voicemail: String = "",
+    /** What to do with numbers starting with + when calling from this number. */
+    val plusRule: PlusRule = PlusRule.DropPlus,
 )
 
 /** Why a number couldn't be saved; each maps to a plain-language message on screen. */
@@ -178,6 +180,9 @@ interface Bridge {
 
     /** True when the phone's contacts are being read (upstream's contacts mode isn't "baresip"). */
     fun contactsOn(): Boolean
+
+    /** True when BusyCall may read (and, as upstream needs, write) the phone's contacts. */
+    fun hasContactsPermission(ctx: android.content.Context): Boolean
 
     /**
      * Starts reading the phone's contacts. If READ_CONTACTS / WRITE_CONTACTS are missing, asks for

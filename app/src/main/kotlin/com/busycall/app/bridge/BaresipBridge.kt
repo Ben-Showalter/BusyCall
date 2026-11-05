@@ -11,6 +11,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.telecom.TelecomManager
 import android.util.Log
+import com.busycall.app.data.Prefs
 import com.tutpro.baresip.Account
 import com.tutpro.baresip.Api
 import com.tutpro.baresip.BaresipService
@@ -186,6 +187,7 @@ object BaresipBridge : Bridge {
                 vmParts.host == parts.host -> vmParts.user
                 else -> vm
             },
+            plusRule = plusRuleOf(acc.aor),
         )
     }
 
@@ -241,6 +243,7 @@ object BaresipBridge : Bridge {
         }
         BaresipService.aorPasswords.remove(acc.aor)
         Account.saveAccounts()
+        savePlusRule(acc.aor, draft.plusRule)
         logPasswordState("added", acc)
         if (acc.regint > 0) ua.reRegister()
         return SaveResult.Saved(acc.aor)
@@ -281,6 +284,7 @@ object BaresipBridge : Bridge {
             reRegister = true
         }
         Account.saveAccounts()
+        savePlusRule(acc.aor, draft.plusRule)
         logPasswordState("updated", acc)
         if (reRegister && acc.regint > 0) ua.reRegister()
         return SaveResult.Saved(acc.aor)
@@ -296,6 +300,17 @@ object BaresipBridge : Bridge {
         ua.remove()
         Api.ua_destroy(ua.uap)
         Account.saveAccounts()
+        Prefs.setPlusRule(id, null, null)
+    }
+
+    // "Numbers starting with +", kept in BusyCall's own Prefs per number (no upstream change).
+    private fun plusRuleOf(aor: String): PlusRule {
+        val (key, prefix) = Prefs.plusRule(aor)
+        return PlusRule.of(key, prefix)
+    }
+
+    private fun savePlusRule(aor: String, rule: PlusRule) {
+        Prefs.setPlusRule(aor, rule.key(), (rule as? PlusRule.ReplaceWith)?.prefix)
     }
 
     override fun setDefault(id: String) {
@@ -340,7 +355,8 @@ object BaresipBridge : Bridge {
         if (!isRunning()) return PlaceResult.Failed(PlaceProblem.ServiceNotRunning)
         val ua = (fromId?.let { agentOf(it) } ?: sipAgents().firstOrNull())
             ?: return PlaceResult.Failed(PlaceProblem.NoNumber)
-        val text = dial.trim()
+        // Numbers starting with + as this number's phone system wants them (PlusRule).
+        val text = plusRuleOf(ua.account.aor).apply(dial.trim())
         // Same number-to-address rules as upstream's dialer (MainScreen.makeCall), SIP accounts only.
         val peerUri = if (Utils.isTelNumber(text)) "tel:$text" else text
         val uri = if (Utils.isTelUri(peerUri)) Utils.telToSip(peerUri, ua.account) else Utils.uriComplete(peerUri, ua.account.aor)
@@ -414,6 +430,8 @@ object BaresipBridge : Bridge {
     private val contactsPermissions = arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS)
 
     override fun contactsOn(): Boolean = BaresipService.contactsMode != "baresip"
+
+    override fun hasContactsPermission(ctx: Context): Boolean = Utils.checkPermissions(ctx, contactsPermissions)
 
     override fun turnContactsOn(activity: Activity): Boolean {
         // Upstream's Config falls back to its own list unless both are granted (Config.initialize).

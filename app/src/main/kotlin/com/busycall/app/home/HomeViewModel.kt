@@ -39,6 +39,17 @@ class HomeViewModel(
         )
     }
 
+    /**
+     * Contacts at startup (AGENTS §7): ask once, as soon as the phone service is up (so the
+     * microphone prompt has been answered first, guide §5: one at a time).
+     */
+    fun contactsStep(asked: Boolean, hasPermission: Boolean): ContactsStep = when {
+        permissionsDenied || !bridge.isRunning() -> ContactsStep.Wait
+        hasPermission -> if (bridge.contactsOn()) ContactsStep.Nothing else ContactsStep.SwitchOn
+        asked -> ContactsStep.Nothing
+        else -> ContactsStep.Ask
+    }
+
     companion object {
         const val RECENT_LIMIT = 8
     }

@@ -274,6 +274,21 @@
     <string name="bc_calllog_call_back">Call back</string>
     <string name="bc_calllog_delete">Delete</string>
 
+    <!-- Number setup: what to do with numbers starting with + (contacts store +1 555…). -->
+    <string name="bc_field_plus">Numbers starting with +</string>
+    <string name="bc_plus_drop">Drop the +</string>
+    <string name="bc_plus_drop_sub">+1 555 0198 is sent as 1 555 0198</string>
+    <string name="bc_plus_keep">Keep the +</string>
+    <string name="bc_plus_keep_sub">Only if your phone system accepts +</string>
+    <string name="bc_plus_replace">Replace + with…</string>
+    <string name="bc_plus_replace_sub">For example 011 or 00</string>
+    <string name="bc_plus_prefix_hint">Digits, e.g. 011</string>
+    <!-- The current choice, shown on the row. -->
+    <string name="bc_plus_drop_value">Drop the + (1 555…)</string>
+    <string name="bc_plus_keep_value">Keep the + (+1 555…)</string>
+    <!-- %1$s = the digits that replace +, e.g. "011". -->
+    <string name="bc_plus_replace_value">Replace + with %1$s</string>
+
     <!-- Settings -->
     <string name="bc_settings_title">Settings</string>
     <string name="bc_settings_options_side">Options key</string>

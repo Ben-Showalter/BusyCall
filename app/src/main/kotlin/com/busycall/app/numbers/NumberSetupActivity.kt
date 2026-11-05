@@ -1,5 +1,6 @@
 package com.busycall.app.numbers
 
+import android.app.AlertDialog
 import android.os.Bundle
 import android.text.InputType
 import android.view.KeyEvent
@@ -8,6 +9,7 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import com.busycall.app.bridge.NumberDraft
+import com.busycall.app.bridge.PlusRule
 import com.busycall.app.bridge.SaveProblem
 import com.busycall.app.bridge.SaveResult
 import com.busycall.app.bridge.Transport
@@ -29,6 +31,7 @@ class NumberSetupActivity : FlipBaseActivity() {
     private val viewModel = NumberSetupViewModel()
     private var editId: String? = null
     private var transport = Transport.UDP
+    private var plusRule: PlusRule = PlusRule.DropPlus
     private var showPassword = false
 
     private lateinit var error: TextView
@@ -40,6 +43,7 @@ class NumberSetupActivity : FlipBaseActivity() {
     private lateinit var authUser: EditText
     private lateinit var voicemail: EditText
     private lateinit var transportValue: TextView
+    private lateinit var plusValue: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,6 +60,7 @@ class NumberSetupActivity : FlipBaseActivity() {
         authUser = findViewById(R.id.bc_setup_auth_user)
         voicemail = findViewById(R.id.bc_setup_voicemail)
         transportValue = findViewById(R.id.bc_setup_transport_value)
+        plusValue = findViewById(R.id.bc_setup_plus_value)
 
         val draft = viewModel.start(editId, DraftExtras.get(intent))
         name.setText(draft.name)
@@ -67,6 +72,8 @@ class NumberSetupActivity : FlipBaseActivity() {
         voicemail.setText(draft.voicemail)
         transport = draft.transport
         showTransport()
+        plusRule = draft.plusRule
+        showPlusRule()
         // Editing: an empty password means "keep the saved one".
         findViewById<View>(R.id.bc_setup_password_note).visibility =
             if (editId != null && draft.password.isEmpty()) View.VISIBLE else View.GONE
@@ -82,6 +89,7 @@ class NumberSetupActivity : FlipBaseActivity() {
         }
 
         findViewById<View>(R.id.bc_setup_transport).setOnClickListener { chooseTransport() }
+        findViewById<View>(R.id.bc_setup_plus).setOnClickListener { choosePlusRule() }
         findViewById<View>(R.id.bc_setup_save).setOnClickListener { save() }
         findViewById<View>(R.id.bc_setup_more).setOnClickListener { openOptions() }
         findViewById<TextView>(R.id.bc_setup_save).paint.isFakeBoldText = true
@@ -101,7 +109,49 @@ class NumberSetupActivity : FlipBaseActivity() {
             if (at >= 0) password.setSelection(at.coerceAtMost(password.text.length))
         },
         MenuItem(getString(R.string.bc_field_connection)) { chooseTransport() },
+        MenuItem(getString(R.string.bc_field_plus)) { choosePlusRule() },
     )
+
+    /** "Numbers starting with +": many phone systems don't route a leading + (docs/PBX-NOTES.md). */
+    private fun choosePlusRule() {
+        Menus.show(this, getString(R.string.bc_field_plus), listOf(
+            MenuItem(getString(R.string.bc_plus_drop), getString(R.string.bc_plus_drop_sub)) {
+                plusRule = PlusRule.DropPlus
+                showPlusRule()
+            },
+            MenuItem(getString(R.string.bc_plus_keep), getString(R.string.bc_plus_keep_sub)) {
+                plusRule = PlusRule.AsIs
+                showPlusRule()
+            },
+            MenuItem(getString(R.string.bc_plus_replace), getString(R.string.bc_plus_replace_sub)) { askPlusPrefix() },
+        ))
+    }
+
+    /** The prefix for "Replace + with…": digits only (the phone's keypad, no keyboard needed). */
+    private fun askPlusPrefix() {
+        val field = EditText(this).apply {
+            inputType = InputType.TYPE_CLASS_PHONE
+            setSingleLine(true)
+            setText((plusRule as? PlusRule.ReplaceWith)?.prefix ?: "")
+            hint = getString(R.string.bc_plus_prefix_hint)
+            setTextColor(getColor(R.color.bc_text))
+            setHintTextColor(getColor(R.color.bc_text_muted))
+        }
+        AlertDialog.Builder(this, R.style.BcDialog)
+            .setTitle(R.string.bc_plus_replace)
+            .setView(field)
+            .setPositiveButton(R.string.bc_ok) { _, _ ->
+                val prefix = field.text.toString().filter { it.isDigit() }
+                plusRule = if (prefix.isEmpty()) PlusRule.DropPlus else PlusRule.ReplaceWith(prefix)
+                showPlusRule()
+            }
+            .setNegativeButton(R.string.bc_cancel, null)
+            .show()
+    }
+
+    private fun showPlusRule() {
+        plusValue.text = Words.plusRule(this, plusRule)
+    }
 
     private fun chooseTransport() {
         Menus.show(this, getString(R.string.bc_field_connection), Transport.values().map { t ->
@@ -125,6 +175,7 @@ class NumberSetupActivity : FlipBaseActivity() {
         password = password.text.toString(),
         transport = transport,
         voicemail = voicemail.text.toString(),
+        plusRule = plusRule,
     )
 
     private fun save() {

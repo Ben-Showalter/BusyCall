@@ -12,6 +12,17 @@ data class HomeState(
     val recents: List<HomeRecentRow> = emptyList(),
 )
 
+/** What Home does about the phone's contacts on this refresh. */
+enum class ContactsStep {
+    /** Not yet: the service is starting or its permissions are being asked. */
+    Wait,
+    /** Show Android's contacts prompt (once ever). */
+    Ask,
+    /** Permission is there but contacts are still off: switch them on (no prompt). */
+    SwitchOn,
+    Nothing,
+}
+
 enum class HomeProblem {
     /** baresip's service hasn't finished starting yet. */
     Starting,

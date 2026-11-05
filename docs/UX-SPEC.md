@@ -27,6 +27,9 @@ title (and an optional question under it); the selected row gets the red focus r
   connect: <server's reason>".
 - **Options:** Contacts · Call log · Numbers · Classic screens (temporary) · Settings.
 - **Empty:** one "+ Add a number" row.
+- **Contacts:** once the phone service is up on first start, Android's contacts prompt appears
+  by itself (asked once ever). Allowed: contacts are switched on. Refused: a toast with the
+  Settings path; Contacts › Allow contacts remains.
 
 ## S7 Numbers (`numbers/NumbersActivity`)
 - **Shows:** hint "★ = the number the Dialer calls from"; each number `★ Name · ext` (★ on the
@@ -74,11 +77,14 @@ title (and an optional question under it); the selected row gets the red focus r
 
 ## S8 Number setup (`numbers/NumberSetupActivity`)
 - **Fields:** Name, Server (`*` types a dot), Port, Extension or username, Password,
-  Connection (row → menu UDP/TCP/TLS), Auth ID, Voicemail number; **Save and connect**;
+  Connection (row → menu UDP/TCP/TLS), **Numbers starting with +** (row → menu: Drop the + (default),
+  Keep the +, Replace + with… a digit prefix such as 011), Auth ID, Voicemail number; **Save and connect**;
   **More options…** (opens Options, since the T9 keyboard can take the softkeys).
 - **Editing:** title "Edit number"; an empty password keeps the saved one (note shown).
 - **Errors:** plain words at the top (and a toast), focus moves to the field.
-- **Options:** Save and connect · Show/Hide password · Connection.
+- **Options:** Save and connect · Show/Hide password · Connection · Numbers starting with +.
+- Every call from the number applies its + rule to `+` numbers (contacts store `+1 555…`);
+  extensions and SIP addresses are never changed.
 
 ## S9 Settings (`settings/SettingsActivity`)
 - Options key: Right/Left softkey (OK toggles). About: baresip-studio and license notice.

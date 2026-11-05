@@ -6,6 +6,7 @@ import android.text.format.DateFormat
 import android.widget.TextView
 import com.busycall.app.bridge.NumberProblem
 import com.busycall.app.bridge.NumberStatus
+import com.busycall.app.bridge.PlusRule
 import com.busycall.app.bridge.Transport
 import com.tutpro.baresip.R
 import java.util.Date
@@ -29,6 +30,13 @@ object Words {
         NumberProblem.ServerNotFound -> ctx.getString(R.string.bc_problem_server_not_found)
         NumberProblem.NoNetwork -> ctx.getString(R.string.bc_problem_no_network)
         is NumberProblem.Other -> ctx.getString(R.string.bc_problem_other, problem.text)
+    }
+
+    /** The "Numbers starting with +" choice, with an example. */
+    fun plusRule(ctx: Context, rule: PlusRule): String = when (rule) {
+        PlusRule.DropPlus -> ctx.getString(R.string.bc_plus_drop_value)
+        PlusRule.AsIs -> ctx.getString(R.string.bc_plus_keep_value)
+        is PlusRule.ReplaceWith -> ctx.getString(R.string.bc_plus_replace_value, rule.prefix)
     }
 
     fun statusTone(status: NumberStatus): RowTone = when (status) {

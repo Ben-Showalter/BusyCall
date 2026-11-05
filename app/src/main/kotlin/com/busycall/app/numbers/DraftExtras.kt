@@ -2,6 +2,7 @@ package com.busycall.app.numbers
 
 import android.content.Intent
 import com.busycall.app.bridge.NumberDraft
+import com.busycall.app.bridge.PlusRule
 import com.busycall.app.bridge.Transport
 
 /** Passes a [NumberDraft] between BusyCall's own screens (in-process only; never logged). */
@@ -18,6 +19,8 @@ object DraftExtras {
         .putExtra(P + "pass", draft.password)
         .putExtra(P + "transport", draft.transport.param)
         .putExtra(P + "vm", draft.voicemail)
+        .putExtra(P + "plus", draft.plusRule.key())
+        .putExtra(P + "plus_prefix", (draft.plusRule as? PlusRule.ReplaceWith)?.prefix)
 
     fun get(intent: Intent): NumberDraft? {
         if (!intent.hasExtra(P + "server")) return null
@@ -30,6 +33,7 @@ object DraftExtras {
             password = intent.getStringExtra(P + "pass").orEmpty(),
             transport = Transport.fromParam(intent.getStringExtra(P + "transport")) ?: Transport.UDP,
             voicemail = intent.getStringExtra(P + "vm").orEmpty(),
+            plusRule = PlusRule.of(intent.getStringExtra(P + "plus"), intent.getStringExtra(P + "plus_prefix")),
         )
     }
 }

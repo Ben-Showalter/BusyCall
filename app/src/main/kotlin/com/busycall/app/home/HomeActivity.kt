@@ -15,7 +15,9 @@ import com.busycall.app.bridge.CallDirection
 import com.busycall.app.bridge.NumberProblem
 import com.busycall.app.bridge.NumberStatus
 import com.busycall.app.bridge.PlaceResult
+import com.busycall.app.bridge.Bridge
 import com.busycall.app.call.InCallActivity
+import com.busycall.app.data.Prefs
 import com.busycall.app.calllog.CallLogActivity
 import com.busycall.app.contacts.ContactsActivity
 import com.busycall.app.dialer.DialerActivity
@@ -50,6 +52,7 @@ class HomeActivity : FlipBaseActivity() {
     // Status changes arrive from baresip asynchronously; a light refresh keeps the screen live.
     private val tick = object : Runnable {
         override fun run() {
+            handleContacts()
             render(viewModel.state())
             if (resumed) handler.postDelayed(this, REFRESH_MS)
         }
@@ -88,8 +91,29 @@ class HomeActivity : FlipBaseActivity() {
         super.onPause()
     }
 
+    /** Asks for contacts once at startup, and switches them on whenever they're allowed (AGENTS §7). */
+    private fun handleContacts() {
+        val bridge = Bridges.current
+        when (viewModel.contactsStep(Prefs.wereContactsAsked(this), bridge.hasContactsPermission(this))) {
+            ContactsStep.Ask -> {
+                Prefs.setContactsAsked(this)
+                bridge.turnContactsOn(this) // shows Android's prompt; the answer comes back below
+            }
+            ContactsStep.SwitchOn -> bridge.turnContactsOn(this)
+            ContactsStep.Wait, ContactsStep.Nothing -> {}
+        }
+    }
+
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == Bridge.CONTACTS_REQUEST) {
+            if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+                Bridges.current.turnContactsOn(this)
+            } else {
+                Toast.makeText(this, R.string.bc_contacts_refused, Toast.LENGTH_LONG).show()
+            }
+            return
+        }
         if (requestCode != BaresipBridge.PERMISSIONS_REQUEST) return
         val allGranted = grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }
         viewModel.permissionsDenied = !allGranted

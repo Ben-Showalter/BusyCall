@@ -83,6 +83,7 @@ abstract class FlipBaseActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Prefs.init(this)
         window.decorView.viewTreeObserver.addOnGlobalFocusChangeListener { _, newFocus ->
             // The system T9 keyboard shows its labels in the navigation bar (guide §4).
             if (newFocus is EditText) SystemBars.showNavigation(this) else SystemBars.hideNavigation(this)

@@ -82,6 +82,8 @@ class FakeBridge(
     val deletedRecents = mutableListOf<RecentUi>()
 
     override fun contactsOn() = contactsAreOn
+    var contactsPermission = true
+    override fun hasContactsPermission(ctx: android.content.Context) = contactsPermission
     override fun turnContactsOn(activity: Activity): Boolean { contactsAreOn = true; return true }
     override fun contacts(): List<ContactUi> = if (contactsAreOn) contacts.toList() else emptyList()
     override fun deleteRecent(recent: RecentUi) { deletedRecents.add(recent); recents.remove(recent) }

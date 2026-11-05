@@ -209,7 +209,8 @@ The full key table is `PLAN.md §3.1`. In code:
 ## 7. Contacts
 
 - Read the phone's contacts through upstream's `Contact.kt` (via `bridge/`).
-  Ask for `READ_CONTACTS` **and** `WRITE_CONTACTS` at first use (upstream's
+  Ask for `READ_CONTACTS` **and** `WRITE_CONTACTS` once, right after the phone
+  service first starts (Home; owner's decision 2026-11-05) (upstream's
   `Config` falls back to its own list unless both are granted), with a toast
   giving the D-pad path if it's refused (guide §5). Without permission, the app
   still works with typed numbers and shows "Contacts are off — Options › Allow contacts".
