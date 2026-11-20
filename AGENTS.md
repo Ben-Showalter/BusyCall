@@ -164,6 +164,14 @@ The full key table is `PLAN.md §3.1`. In code:
   up / decline in **`onUserLeaveHint`** (`FlipBaseActivity.onLeftByKey`), only on keypad phones
   and only when BusyCall didn't open something itself (`startActivityForResult` marks those:
   the Home softkey, + Call, Transfer). Rule in `CallScreenRules.leavingEnds`.
+- **Backstop: a call screen destroyed from outside ends its call** (the Pure Speech dialer's
+  `onDestroy` finding: Kyocera's END can close the window without onKeyDown, onBackPressed or
+  onUserLeaveHint). Our own closes go through `finish()`, which `FlipBaseActivity` marks;
+  anything else → `onClosedFromOutside()` → hang up / decline (`CallScreenRules.closedEnds`).
+- **END's scan code wins:** `KeyRouter` maps scan code 107 (Linux `KEY_END`) to `End` whatever
+  keycode it arrives with, so END sent as BACK hangs up while **Clear (BACK) never does**.
+  Never hang up on plain BACK. Settings › Key log shows what each key sent (`keys/KeyLog`,
+  never which digit).
 - **END in other apps is left alone** (owner, 2026-11-20). `keys/EndKeyService` (accessibility)
   only acts on a real `KEYCODE_ENDCALL` (ringing → decline, call screen → hang up), shows the
   last END/HOME it saw in Settings, and keeps BusyCall alive: while it runs, upstream's status
@@ -338,8 +346,9 @@ Test on a 240×320 mdpi emulator with touch off, then on the real phone (guide c
 - **Putting on-screen actions in Options**, or bringing back an Options menu in a call.
 - **Consuming END** or bringing the app back after it. Hang up, then let the
   system do what END does (usually Home).
-- **Waiting for `KEYCODE_ENDCALL` on Kyocera.** It arrives as HOME: hang up in
-  `onUserLeaveHint` (call screens only, never after BusyCall's own launches).
+- **Waiting for `KEYCODE_ENDCALL` on Kyocera.** It may arrive as HOME or BACK, or just close
+  the window: `onUserLeaveHint`, END's scan code, and the `onDestroy` backstop cover those.
+  Never treat plain BACK as END (Clear sends BACK).
 - **Leaving the app after the on-screen End button.** Only the END key leaves;
   the button returns to the previous screen (or to the other call, with two).
 - **Hanging up on BACK.**

@@ -10,7 +10,8 @@ import com.busycall.app.bridge.Bridges
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.busycall.app.data.Prefs
-import com.busycall.app.keys.EndKeyService
+import com.busycall.app.keys.KeyLog
+import com.busycall.app.keys.LoggedKey
 import com.busycall.app.ui.EndKeySetup
 import com.busycall.app.ui.FlipBaseActivity
 import com.busycall.app.ui.Menus
@@ -36,7 +37,7 @@ class SettingsActivity : FlipBaseActivity() {
         list.getChildAt(0)?.let { first -> first.post { if (currentFocus == null) first.requestFocus() } }
     }
 
-    private enum class Item { PhoneDialer, EndKey, EndKeySeen, OptionsSide, About }
+    private enum class Item { PhoneDialer, EndKey, KeyLog, OptionsSide, About }
 
     override fun onResume() {
         super.onResume()
@@ -82,12 +83,13 @@ class SettingsActivity : FlipBaseActivity() {
         }
     }
 
+    private fun describe(k: LoggedKey): String =
+        getString(R.string.bc_settings_key_log_entry, k.name, k.keyCode, k.scanCode, getString(
+            if (k.source == "service") R.string.bc_settings_key_log_service else R.string.bc_settings_key_log_screen))
+
     private fun render() {
         // Only phones with a SIM can use BusyCall for phone calls.
-        val items = Item.values().filter {
-            (it != Item.PhoneDialer || packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) &&
-                (it != Item.EndKeySeen || EndKeySetup.isOn(this))
-        }
+        val items = Item.values().filter { it != Item.PhoneDialer || packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY) }
         Rows.fill(list, items) { row, title, subtitle, _, item ->
             when (item) {
                 Item.PhoneDialer -> {
@@ -105,14 +107,18 @@ class SettingsActivity : FlipBaseActivity() {
                     // On or off, both happen in Android's Accessibility settings.
                     row.setOnClickListener { if (on) EndKeySetup.open(this) else EndKeySetup.offer(this) }
                 }
-                Item.EndKeySeen -> {
-                    // What this phone sends for END (SPIKES S8): HOME on Kyocera, ENDCALL elsewhere.
-                    val seen = EndKeyService.lastKey
-                    Rows.setText(title, getString(R.string.bc_settings_end_seen))
-                    Rows.setText(subtitle, seen?.let { getString(R.string.bc_settings_end_seen_value, it.name, it.keyCode, it.scanCode) }
-                        ?: getString(R.string.bc_settings_end_seen_none))
+                Item.KeyLog -> {
+                    // What this phone sends for END, Clear… (SPIKES S8; guide §7).
+                    val keys = KeyLog.entries()
+                    Rows.setText(title, getString(R.string.bc_settings_key_log))
+                    Rows.setText(subtitle, keys.firstOrNull()?.let { describe(it) } ?: getString(R.string.bc_settings_key_log_empty))
                     Rows.tone(subtitle, RowTone.Muted)
-                    row.setOnClickListener { render() }
+                    row.setOnClickListener {
+                        val text = if (keys.isEmpty()) getString(R.string.bc_settings_key_log_empty)
+                            else KeyLog.entries().joinToString("\n") { describe(it) }
+                        Menus.notice(this, getString(R.string.bc_settings_key_log), text)
+                        render()
+                    }
                 }
                 Item.OptionsSide -> {
                     Rows.setText(title, getString(R.string.bc_settings_options_side))

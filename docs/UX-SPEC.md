@@ -113,8 +113,8 @@ Home **is** the call log (owner, 2026-11-20); there is no separate Call log scre
 - **Stay ready (no notification):** "On: no notification needed" / "Off: END hangs up only on the
   call screen". OK opens Android's Accessibility settings (off: after the card explaining it).
   While on, BusyCall shows no status notification, and END works on phones that send ENDCALL.
-- **END key seen** (only while that's on): what the phone sent for END, e.g. "HOME (3), scan 102",
-  or "Press END once, then come back".
+- **Key log:** the last 8 keys BusyCall saw (e.g. "BACK 4 · scan 158 · screen"), newest on the
+  row, all of them on OK. Digits show only as "digit". Used to learn what a phone sends for END.
 - Options key: Right/Left softkey (OK toggles). About: baresip-studio and license notice.
 
 ## S2 Dialer (`dialer/DialerActivity`)
@@ -196,8 +196,9 @@ Home **is** the call log (owner, 2026-11-20); there is no separate Call log scre
   caller holds, BusyCall calls the park number, the phone system announces the slot, OK =
   **Park** leaves the caller there). **▼ with two calls** = **Transfer**: connects them, you drop off.
   0–9 `*` `#` send keypad tones the moment they're pressed (once connected). END = hang up, then
-  the system's own END action (on Kyocera END arrives as HOME: leaving this screen by key hangs
-  up; the Home softkey, + Call and Transfer don't). Outer END / headset = hang up. Outer Speaker = speaker. BACK
+  the system's own END action. On Kyocera END may arrive as HOME or BACK (scan 107), or close
+  the screen: each of those hangs up. Clear (BACK) only leaves the screen; the Home softkey,
+  + Call and Transfer never hang up. Outer END / headset = hang up. Outer Speaker = speaker. BACK
   leaves the screen; the call goes on (the On-call bar shows elsewhere).
 - The on-screen End stays in the app: back to the other call if there is one, else the screen
   before. Every petal is also tappable.

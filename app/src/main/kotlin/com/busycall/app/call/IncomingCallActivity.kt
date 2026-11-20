@@ -85,6 +85,9 @@ class IncomingCallActivity : FlipBaseActivity() {
 
     override val isCallScreen = true
 
+    /** END closed this screen from outside (Kyocera): decline. */
+    override fun onClosedFromOutside() = onLeftByKey()
+
     /** END arrives as HOME on Kyocera: decline, as END does (AGENTS §4). */
     override fun onLeftByKey() {
         viewModel.callId?.let { Bridges.current.decline(this, it) }

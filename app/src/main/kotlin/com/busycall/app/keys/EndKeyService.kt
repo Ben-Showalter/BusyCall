@@ -10,15 +10,12 @@ import android.view.accessibility.AccessibilityEvent
 import com.busycall.app.bridge.Bridges
 import com.busycall.app.ui.CallScreens
 
-/** One key press the service saw: its name, keycode and scan code. */
-data class KeySeen(val name: String, val keyCode: Int, val scanCode: Int)
-
 /**
  * BusyCall's accessibility service (owner, 2026-11-20). It keeps BusyCall alive, so upstream's
  * status notification is dropped (UPSTREAM.md). On a phone that sends `KEYCODE_ENDCALL` it
  * declines a ringing call and hangs up on the call screen; in other apps END is left alone. On
  * Kyocera END arrives as HOME, which the call screens handle themselves (onUserLeaveHint). It
- * remembers the last END/HOME it saw, for Settings. It never consumes a key.
+ * logs keys that leave or end things for Settings › Key log (KeyLog). It never consumes a key.
  */
 class EndKeyService : AccessibilityService() {
 
@@ -37,12 +34,11 @@ class EndKeyService : AccessibilityService() {
     override fun onKeyEvent(event: KeyEvent): Boolean {
         // Cheap for every other key: it blocks key delivery to every app (guide §5).
         val key = KeyRouter.route(event.keyCode, event.scanCode)
-        val isHome = event.keyCode == KeyEvent.KEYCODE_HOME
-        if (key != LogicalKey.End && !isHome) return false
         if (event.action != KeyEvent.ACTION_DOWN || event.repeatCount != 0) return false
-        // What this phone sends for END, for Settings (the E4810 spike, SPIKES S8).
-        lastKey = KeySeen(if (isHome) "HOME" else "ENDCALL", event.keyCode, event.scanCode)
-        if (key != LogicalKey.End) return false // HOME: the call screens handle it (onUserLeaveHint)
+        // Keys that leave or end things, for Settings › Key log (SPIKES S8). Not digits or arrows.
+        if (key == LogicalKey.End || key == LogicalKey.Back || key == LogicalKey.Call || key is LogicalKey.Unknown ||
+            event.keyCode == KeyEvent.KEYCODE_HOME) KeyLog.add(event.keyCode, event.scanCode, "service")
+        if (key != LogicalKey.End) return false // HOME / BACK: the call screens handle those
         when (val action = EndKeyDecision.decide(Bridges.current.calls(), CallScreens.inCallInFront)) {
             is EndAction.Decline -> Bridges.current.decline(this, action.callId)
             is EndAction.HangUp -> Bridges.current.hangup(this, action.callId)
@@ -72,11 +68,6 @@ class EndKeyService : AccessibilityService() {
     }
 
     companion object {
-        /** The last END or HOME press the service saw; null until one is pressed. */
-        @Volatile
-        var lastKey: KeySeen? = null
-            private set
-
         @Volatile
         var running = false
             private set

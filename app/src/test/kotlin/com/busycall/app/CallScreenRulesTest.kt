@@ -34,6 +34,11 @@ class CallScreenRulesTest {
         assertFalse(CallScreenRules.leavingEnds(keypadPhone = false, onPurpose = false)) // a touch phone's Home
     }
 
+    @Test fun `a call screen closed from outside ends its call (Kyocera END, Pure Speech dialer)`() {
+        assertTrue(CallScreenRules.closedEnds(closedByUs = false))
+        assertFalse(CallScreenRules.closedEnds(closedByUs = true))
+    }
+
     @Test fun `a new outgoing call opens the call screen unless it's in front`() {
         assertTrue(CallRouter.shouldShowOutgoing(callScreenInFront = false, blockedFromBackground = false))
         assertFalse(CallRouter.shouldShowOutgoing(callScreenInFront = true, blockedFromBackground = false))

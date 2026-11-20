@@ -31,4 +31,11 @@ object CallScreenRules {
      * so on a keypad phone that means END: hang up / decline. On a touch phone it's the nav-bar Home.
      */
     fun leavingEnds(keypadPhone: Boolean, onPurpose: Boolean): Boolean = keypadPhone && !onPurpose
+
+    /**
+     * A screen is being destroyed. If BusyCall didn't close it ([closedByUs] false), something
+     * outside did: on Kyocera that's END (the Pure Speech dialer's finding). A call screen then
+     * ends its call, if one is still live (the call screen checks that itself).
+     */
+    fun closedEnds(closedByUs: Boolean): Boolean = !closedByUs
 }

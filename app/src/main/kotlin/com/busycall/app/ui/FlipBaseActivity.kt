@@ -20,6 +20,7 @@ import com.busycall.app.call.OpenTarget
 import com.busycall.app.call.CallScreenRules
 import com.busycall.app.call.IncomingCallActivity
 import com.busycall.app.data.Prefs
+import com.busycall.app.keys.KeyLog
 import com.busycall.app.keys.KeyRouter
 import com.busycall.app.keys.LogicalKey
 import com.tutpro.baresip.R
@@ -103,6 +104,26 @@ abstract class FlipBaseActivity : Activity() {
      * phone that's END (it arrives as HOME on Kyocera). Call screens hang up / decline here.
      */
     protected open fun onLeftByKey() {}
+
+    /**
+     * This screen was torn down from outside while a call may still be on: on Kyocera, END
+     * closes the window that way (the Pure Speech dialer's onDestroy finding). Call screens end
+     * the call here.
+     */
+    protected open fun onClosedFromOutside() {}
+
+    // Set by our own finish(): BusyCall closed this screen itself.
+    private var closingOnPurpose = false
+
+    override fun finish() {
+        closingOnPurpose = true
+        super.finish()
+    }
+
+    override fun onDestroy() {
+        if (CallScreenRules.closedEnds(closedByUs = closingOnPurpose)) onClosedFromOutside()
+        super.onDestroy()
+    }
 
     // Set when this screen opens another one itself (+ Call, the Home softkey, a picker), so
     // onUserLeaveHint knows it wasn't the user's END/HOME.
@@ -229,6 +250,7 @@ abstract class FlipBaseActivity : Activity() {
         val down = event.action == KeyEvent.ACTION_DOWN
         val up = event.action == KeyEvent.ACTION_UP
         val typing = currentFocus is EditText
+        if (down && event.repeatCount == 0) KeyLog.add(event.keyCode, event.scanCode, "screen")
 
         if (key == LogicalKey.End && down && event.repeatCount == 0) onEndKeyDown()
 

@@ -434,9 +434,11 @@
     <string name="bc_settings_end_key">Stay ready (no notification)</string>
     <string name="bc_settings_end_key_on">On: no notification needed</string>
     <string name="bc_settings_end_key_off">Off: END hangs up only on the call screen</string>
-    <!-- Settings: what the phone sent for END, as the END-key service saw it. -->
-    <string name="bc_settings_end_seen">END key seen</string>
-    <!-- %1$s = "HOME" or "ENDCALL", %2$d = keycode, %3$d = scan code. -->
-    <string name="bc_settings_end_seen_value">%1$s (%2$d), scan %3$d</string>
-    <string name="bc_settings_end_seen_none">Press END once, then come back</string>
+    <!-- Settings: the last keys BusyCall saw, to learn what a phone sends for END and Clear. -->
+    <string name="bc_settings_key_log">Key log</string>
+    <!-- %1$s = "BACK", %2$d = keycode, %3$d = scan code, %4$s = where it was seen. -->
+    <string name="bc_settings_key_log_entry">%1$s %2$d · scan %3$d · %4$s</string>
+    <string name="bc_settings_key_log_screen">screen</string>
+    <string name="bc_settings_key_log_service">Stay ready</string>
+    <string name="bc_settings_key_log_empty">During a call press Clear, then END, then come back here</string>
 </resources>

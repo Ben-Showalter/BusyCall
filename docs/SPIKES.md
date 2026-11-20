@@ -65,8 +65,9 @@ _Built 2026-11-20, not tested yet._ Settings › Use for phone (SIM) calls. Reco
 ## S8 — END key, opening during a call, no status notification (E4810)
 _Built 2026-11-20, not tested yet._ The Pure Speech HMDM dialer found END arrives as HOME on
 Kyocera; BusyCall's call screens now hang up in `onUserLeaveHint`. Record:
-1. Settings › Stay ready › on, press END once, back to Settings: **END key seen** shows what the
-   phone sends (expected "HOME (3)"; note the scan code in the guide's docs/keys.md).
+1. During a call press Clear once, then END once; open Settings › **Key log** (with Stay ready on
+   too, so the service logs keys the screen never gets). Note END's and Clear's keycode and
+   scan code for the guide's docs/keys.md. If END's scan code isn't 107, add it to `KeyRouter`.
 2. In call screen: END hangs up. The Home softkey, + Call and Transfer leave it without hanging up.
 3. Ringing: END declines.
 4. During a call: go to another app, then open BusyCall from the launcher → In call. Close and

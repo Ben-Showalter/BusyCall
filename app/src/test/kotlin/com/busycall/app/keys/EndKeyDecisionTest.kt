@@ -33,3 +33,26 @@ class EndKeyDecisionTest {
         assertEquals(EndAction.Nothing, EndKeyDecision.decide(listOf(call(1, CallState.Connected)), callScreenInFront = false))
     }
 }
+
+/** Kyocera E4810: END may reach apps as BACK or HOME; its scan code (Linux KEY_END, 107) still says END. */
+class EndScanCodeTest {
+
+    @Test fun `scan code 107 is END whatever keycode it comes with`() {
+        assertEquals(LogicalKey.End, KeyRouter.route(android.view.KeyEvent.KEYCODE_BACK, 107))
+        assertEquals(LogicalKey.End, KeyRouter.route(android.view.KeyEvent.KEYCODE_HOME, 107))
+        assertEquals(LogicalKey.End, KeyRouter.route(android.view.KeyEvent.KEYCODE_ENDCALL, 107))
+    }
+
+    @Test fun `Clear stays BACK`() {
+        assertEquals(LogicalKey.Back, KeyRouter.route(android.view.KeyEvent.KEYCODE_BACK, 158))
+    }
+
+    @Test fun `key log keeps the newest 8 and never which digit`() {
+        KeyLog.nameOf = { "K$it" }
+        repeat(10) { KeyLog.add(android.view.KeyEvent.KEYCODE_BACK, 158, "screen") }
+        KeyLog.add(android.view.KeyEvent.KEYCODE_5, 6, "screen")
+        val entries = KeyLog.entries()
+        assertEquals(KeyLog.SIZE, entries.size)
+        assertEquals(LoggedKey("digit", 0, 0, "screen"), entries.first())
+    }
+}

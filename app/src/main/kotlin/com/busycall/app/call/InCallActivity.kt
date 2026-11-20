@@ -122,6 +122,9 @@ class InCallActivity : FlipBaseActivity() {
 
     override val isCallScreen = true
 
+    /** END closed this screen from outside (Kyocera): hang up the call it showed. */
+    override fun onClosedFromOutside() = onLeftByKey()
+
     /** END arrives as HOME on Kyocera (the Pure Speech dialer's finding): hang up what this screen shows. */
     override fun onLeftByKey() {
         when (val action = EndKeyDecision.decide(Bridges.current.calls(), callScreenInFront = true)) {

@@ -52,7 +52,11 @@ object KeyRouter {
     // Mic/Assistant key: KEYCODE_F4, or raw 287 (E4610 even when an app has focus).
     private const val KEYCODE_MIC_RAW = 287
 
-    fun route(keyCode: Int, scanCode: Int): LogicalKey = when (keyCode) {
+    // The END key's Linux scan code (KEY_END). Kyocera E4810: END may reach apps as BACK or HOME;
+    // its scan code still tells it apart from Clear, which also sends BACK (guide docs/keys.md).
+    const val SCAN_KEY_END = 107
+
+    fun route(keyCode: Int, scanCode: Int): LogicalKey = if (scanCode == SCAN_KEY_END) LogicalKey.End else when (keyCode) {
         in KeyEvent.KEYCODE_0..KeyEvent.KEYCODE_9 -> LogicalKey.Digit('0' + (keyCode - KeyEvent.KEYCODE_0))
         in KeyEvent.KEYCODE_NUMPAD_0..KeyEvent.KEYCODE_NUMPAD_9 ->
             LogicalKey.Digit('0' + (keyCode - KeyEvent.KEYCODE_NUMPAD_0))
