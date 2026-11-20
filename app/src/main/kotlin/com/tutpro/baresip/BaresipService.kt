@@ -1225,6 +1225,7 @@ class BaresipService: Service() {
 
                     "call outgoing" -> {
                         if (call!!.status.value == "transferring") break
+                        com.busycall.app.call.CallRouter.onOutgoingCall(this@BaresipService, callp) // BusyCall: every new call opens its call screen
                         if (speakerPhoneAuto) speakerPhone = true
                         stopMediaPlayer()
                         setCallVolume()
@@ -2488,12 +2489,14 @@ class BaresipService: Service() {
                 }, 2000)
             }
         }
-        else
+        else {
+            com.busycall.app.call.CallRouter.onOutgoingCall(this@BaresipService, call.callp) // BusyCall: e.g. voicemail from the phone's own keys
             postServiceEvent(ServiceEvent(
                 "call outgoing",
                 arrayListOf(ua.uap, call.callp),
                 System.nanoTime())
             )
+        } // BusyCall
     }
 
     fun handleExternalCallRemoved(telecomCall: android.telecom.Call) {
