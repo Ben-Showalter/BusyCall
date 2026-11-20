@@ -1267,6 +1267,10 @@ class BaresipService: Service() {
                             blockedCall = true
                             getString(R.string.hidden_call_blocked)
                         }
+                        else if (callFilter?.invoke(ua.account.aor, peerUri, "") == true) { // BusyCall
+                            blockedCall = true // BusyCall
+                            String.format(getString(R.string.call_blocked), Utils.friendlyUri(this, peerUri, ua.account, unique = true)) // BusyCall
+                        } // BusyCall
                         else if (isBlocked(ua.account.aor, peerUri)) {
                             blockedCall = true
                             String.format(
@@ -2396,6 +2400,11 @@ class BaresipService: Service() {
                     ).add()
                 return
             }
+            if (callFilter?.invoke(ua.account.aor, uri, telecomCall.details.callerDisplayName ?: "") == true) { // BusyCall
+                telecomCall.disconnect() // BusyCall
+                if (ua.account.callHistory) Blocked(aor = ua.account.aor, peerUri = uri, request = "invite", timeStamp = GregorianCalendar().timeInMillis).add() // BusyCall
+                return // BusyCall
+            } // BusyCall
             if (isBlocked(ua.account.aor, uri)) {
                 Log.d(TAG, "Auto-rejecting incoming PSTN call from $uri by block rule")
                 telecomCall.disconnect()
@@ -3666,6 +3675,8 @@ class BaresipService: Service() {
         val calls = ArrayList<Call>()
         var callHistory = ArrayList<CallHistory>()
         var blocked = ArrayList<Blocked>()
+        // BusyCall: its own call blocking (aor, peerUri, callerName) -> block?; upstream rejects and logs.
+        @Volatile var callFilter: ((String, String, String) -> Boolean)? = null
         var blockRules = mutableListOf<BlockRule>()
 
         fun isBlocked(aor: String, uri: String): Boolean {
