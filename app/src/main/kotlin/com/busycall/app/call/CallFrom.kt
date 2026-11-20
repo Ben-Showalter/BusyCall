@@ -16,8 +16,18 @@ import com.busycall.app.ui.Menus
 import com.busycall.app.ui.Words
 import com.tutpro.baresip.R
 
-/** One way to call: a SIP number, or the phone's SIM ([id] null). */
-data class FromChoice(val id: String?, val label: String, val number: String, val status: NumberStatus? = null)
+/**
+ * One way to call: a SIP number, or the phone's SIM. The SIM has [id] null when it only opens
+ * the phone's dialer (ACTION_DIAL), or upstream's Mobile account id with [isSim] while BusyCall
+ * is the phone's dialer (the call runs on BusyCall's screens).
+ */
+data class FromChoice(
+    val id: String?,
+    val label: String,
+    val number: String,
+    val status: NumberStatus? = null,
+    val isSim: Boolean = false,
+)
 
 /** What pressing OK/CALL on a new call leads to. */
 sealed class CallFromStep {
@@ -39,8 +49,10 @@ object CallFromDecision {
     /** SIP numbers, ★ default first, then Phone (SIM) when the phone has telephony. */
     fun choices(bridge: Bridge, hasTelephony: Boolean): List<FromChoice> {
         val sip = if (bridge.isRunning()) bridge.numbers().sortedByDescending { it.isDefault } else emptyList()
-        return sip.map { FromChoice(it.id, it.label, it.number, it.status) } +
-            if (hasTelephony) listOf(FromChoice(null, "", "")) else emptyList()
+        val sim = (if (bridge.isRunning()) bridge.sim() else null)?.let {
+            FromChoice(it.id, "", "", if (it.ready) NumberStatus.Registered else NumberStatus.NoConnection, isSim = true)
+        } ?: if (hasTelephony) FromChoice(null, "", "") else null
+        return sip.map { FromChoice(it.id, it.label, it.number, it.status) } + listOfNotNull(sim)
     }
 
     fun decide(held: Boolean, choices: List<FromChoice>, callBackFrom: String? = null): CallFromStep {
@@ -84,13 +96,14 @@ object Calling {
     }
 
     fun label(activity: Activity, c: FromChoice): String = when {
-        c.id == null -> activity.getString(R.string.bc_sim_title)
+        c.id == null || c.isSim -> activity.getString(R.string.bc_sim_title)
         else -> activity.getString(R.string.bc_number_title, c.label, c.number)
     }
 
-    private fun subtitle(activity: Activity, c: FromChoice): String = when (val s = c.status) {
-        null -> activity.getString(R.string.bc_sim_subtitle)
-        else -> Words.status(activity, s)
+    private fun subtitle(activity: Activity, c: FromChoice): String = when {
+        c.isSim -> activity.getString(if (c.status == NumberStatus.Registered) R.string.bc_sim_ready else R.string.bc_sim_no_service)
+        c.status == null -> activity.getString(R.string.bc_sim_subtitle)
+        else -> Words.status(activity, c.status)
     }
 
     private fun place(activity: Activity, from: FromChoice, dial: String, onPlaced: () -> Unit, onProblem: (String) -> Unit) {

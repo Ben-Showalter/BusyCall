@@ -13,6 +13,7 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import com.busycall.app.bridge.Bridges
 import com.busycall.app.numbers.setup.ScanActivity
 import com.busycall.app.numbers.setup.SetupCodeParser
 import com.busycall.app.numbers.setup.SetupFoundActivity
@@ -109,7 +110,10 @@ class NumbersActivity : FlipBaseActivity() {
                 Entry.Sim -> {
                     Rows.setText(title, getString(R.string.bc_sim_title))
                     Words.dot(title, null)
-                    Rows.setText(subtitle, getString(R.string.bc_sim_subtitle))
+                    // While BusyCall is the phone's dialer, SIM calls run on its own screens.
+                    Rows.setText(subtitle, getString(
+                        if (Bridges.current.sim() != null) R.string.bc_settings_phone_dialer_on else R.string.bc_sim_subtitle,
+                    ))
                     Rows.tone(subtitle, RowTone.Muted)
                     row.setOnClickListener { openPhoneDialer() }
                 }

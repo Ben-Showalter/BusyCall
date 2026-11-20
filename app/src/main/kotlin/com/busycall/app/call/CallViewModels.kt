@@ -123,6 +123,8 @@ class InCallViewModel(private val bridge: Bridge = Bridges.current) {
             RingKey.Left -> InCallAction.Mute
             RingKey.Center -> if (state.parking && call.state == CallState.Connected) InCallAction.ParkDone else InCallAction.HangUp
             RingKey.Down -> when {
+                // SIM calls: upstream can't transfer, join or park them.
+                call.isSim -> InCallAction.Nothing
                 state.other != null && call.state == CallState.Connected -> InCallAction.Connect
                 state.other == null && call.state == CallState.Connected -> InCallAction.CallMenu
                 else -> InCallAction.Nothing

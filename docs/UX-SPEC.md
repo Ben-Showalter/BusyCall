@@ -93,6 +93,13 @@ Menus and confirmations are `AlertDialog`s drawn as a rounded dark card with an 
   extensions and SIP addresses are never changed.
 
 ## S9 Settings (`settings/SettingsActivity`)
+- **Use for phone (SIM) calls** (only on phones with a SIM): "On: SIM calls use BusyCall" / "Off:
+  the phone's own dialer handles SIM calls". OK when off: Android's "make BusyCall the phone app"
+  prompt, then the Phone permission; done: "SIM calls now use BusyCall". OK when on: a card
+  "Switch back to the phone's dialer" → Android's default apps screen.
+- While on: Call from… lists **Phone (SIM)** ("Mobile network" / "No mobile service") as a real
+  number; SIM calls ring on S4 and run on S5 (no Call options on ▼); the phone's own dial requests
+  (home-screen digits, `tel:` links) open S2 with the number, and the call-log view opens S6.
 - Options key: Right/Left softkey (OK toggles). About: baresip-studio and license notice.
 
 ## S2 Dialer (`dialer/DialerActivity`)

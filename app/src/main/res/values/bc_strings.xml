@@ -348,6 +348,19 @@
     <string name="bc_plus_replace_value">Replace + with %1$s</string>
 
     <!-- Settings -->
+    <!-- BusyCall as the phone's dialer: SIM calls then use BusyCall's screens. -->
+    <string name="bc_settings_phone_dialer">Use for phone (SIM) calls</string>
+    <string name="bc_settings_phone_dialer_on">On: SIM calls use BusyCall</string>
+    <string name="bc_settings_phone_dialer_off">Off: the phone\'s own dialer handles SIM calls</string>
+    <string name="bc_dialer_on">SIM calls now use BusyCall.</string>
+    <string name="bc_dialer_not_set">BusyCall wasn\'t made the phone app, so SIM calls stay with the phone\'s dialer.</string>
+    <string name="bc_dialer_no_permission">SIM calls need the Phone permission. To allow it: Settings › Apps › BusyCall › Permissions › Phone.</string>
+    <string name="bc_dialer_off_title">Switch back to the phone\'s dialer</string>
+    <string name="bc_dialer_off_message">Android\'s default apps screen opens. Choose Phone app, then pick the phone\'s own dialer.</string>
+    <string name="bc_dialer_off_open">Open</string>
+    <!-- Under Phone (SIM) in the Call from… picker while BusyCall is the phone's dialer. -->
+    <string name="bc_sim_ready">Mobile network</string>
+    <string name="bc_sim_no_service">No mobile service</string>
     <string name="bc_settings_title">Settings</string>
     <string name="bc_settings_options_side">Options key</string>
     <string name="bc_settings_side_right">Right softkey (OK to change)</string>

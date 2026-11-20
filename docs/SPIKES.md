@@ -40,6 +40,17 @@ the keys. Still to test: incoming calls, CALL/END (S2), idle re-registration (S3
 Android 7 support is out of scope for now; the notes above stay as the starting
 point if it comes back.
 
+## S7 — BusyCall as the phone's dialer (E4810, Android 9)
+_Built 2026-11-20, not tested yet._ Settings › Use for phone (SIM) calls. Record:
+1. Android's prompt appears; BusyCall becomes the default dialer.
+2. A SIM call in: Incoming screen, Answer, audio both ways, End. Also with BusyCall closed and
+   after a reboot. **Risk:** upstream's InCallService forwards a call only if its service is
+   running; a lost call here means adding a small pending-call queue to the fork patch.
+3. A SIM call out from Call from… › Phone (SIM).
+4. 911: carrier test procedure only. Emergency calls always work from the lock screen.
+5. CALL/END and the stock launcher's digit keys with BusyCall as the dialer.
+6. Switch back to the stock dialer; everything works again.
+
 ## S2 — CALL and END keys
 _Not started._ Record per phone: keycode and scan code for CALL, END, outer END,
 headset button; whether END reaches the app during a call; whether Android's own

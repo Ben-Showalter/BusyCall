@@ -159,7 +159,8 @@ object BaresipBridge : Bridge {
             RecentUi(
                 peerName = name,
                 peerUri = h.peerUri,
-                numberLabel = ua?.account?.nickName?.ifEmpty { null } ?: SipAddress.parse(h.aor).user,
+                numberLabel = if (ua?.account?.isMobile == true) simLabel()
+                    else ua?.account?.nickName?.ifEmpty { null } ?: SipAddress.parse(h.aor).user,
                 numberId = h.aor,
                 direction = if (incoming) CallDirection.In else CallDirection.Out,
                 missed = incoming && h.startTime == null,
@@ -353,7 +354,8 @@ object BaresipBridge : Bridge {
     // ---- Calls ----
 
     // Phone (SIM) calls stay with the phone's own dialer (PLAN §5.2), so they're left out.
-    override fun calls(): List<CallUi> = Call.calls().filter { !it.ua.account.isMobile }.map { c ->
+    // SIM calls are shown only while BusyCall is the phone's dialer (upstream's Mobile account).
+    override fun calls(): List<CallUi> = Call.calls().filter { !it.ua.account.isMobile || sim() != null }.map { c ->
         val acc = c.ua.account
         val parts = SipAddress.parse(acc.luri.ifEmpty { acc.aor })
         val label = acc.nickName.ifEmpty { parts.user }
@@ -361,10 +363,20 @@ object BaresipBridge : Bridge {
             id = c.callp,
             peerName = PeerName.of(c.peerUri, contactIndex()) ?: Utils.friendlyUri(c.peerUri, acc),
             peerUri = c.peerUri,
-            numberLabel = if (label == parts.user) parts.user else "$label · ${parts.user}",
+            numberLabel = when {
+                acc.isMobile -> simLabel()
+                label == parts.user -> parts.user
+                else -> "$label · ${parts.user}"
+            },
+            isSim = acc.isMobile,
             incoming = c.dir == "in",
             state = stateOf(c),
-            durationSec = if (c.status.value == "connected") c.duration() else 0,
+            durationSec = when {
+                c.status.value != "connected" -> 0
+                // Upstream's SIM calls report 0; count from when it was answered.
+                acc.isMobile -> c.startTime?.let { ((System.currentTimeMillis() - it.timeInMillis) / 1000).toInt() } ?: 0
+                else -> c.duration()
+            },
             numberId = acc.aor,
         )
     }
@@ -396,6 +408,7 @@ object BaresipBridge : Bridge {
 
     override fun placeCall(activity: Activity, fromId: String?, dial: String, holdCallId: Long?): PlaceResult {
         if (!isRunning()) return PlaceResult.Failed(PlaceProblem.ServiceNotRunning)
+        if (fromId != null && fromId == sim()?.id) return placeSimCall(activity, dial)
         // A second call goes out on the same number as the held one.
         val held = holdCallId?.let { Call.ofCallp(it) }
         val ua = held?.ua ?: (fromId?.let { agentOf(it) } ?: sipAgents().firstOrNull())
@@ -443,6 +456,67 @@ object BaresipBridge : Bridge {
     override fun answer(activity: Activity, callId: Long) = serviceCommand(activity, "Call Answer", callId)
     override fun decline(activity: Activity, callId: Long) = serviceCommand(activity, "Call Reject", callId)
     override fun hangup(activity: Activity, callId: Long) = serviceCommand(activity, "Call Hangup", callId)
+
+    /**
+     * A SIM call while BusyCall is the phone's dialer: Android places it on the SIM (no SIP
+     * account handle), and upstream's InCallService then hands it to its Mobile account, so it
+     * shows on BusyCall's call screens. Numbers are dialed as typed (no + rule).
+     */
+    private fun placeSimCall(activity: Activity, dial: String): PlaceResult {
+        val number = dial.trim().removePrefix("tel:").substringBefore('@').removePrefix("sip:")
+        if (!Utils.isTelNumber(number)) return PlaceResult.Failed(PlaceProblem.InvalidAddress)
+        return try {
+            val tm = activity.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
+            tm.placeCall(Uri.fromParts("tel", number, null), Bundle())
+            PlaceResult.Placed
+        } catch (e: SecurityException) {
+            Log.e(TAG, "SIM placeCall failed: ${e.javaClass.simpleName}")
+            PlaceResult.Failed(PlaceProblem.Failed)
+        }
+    }
+
+    // ---- BusyCall as the phone's dialer ----
+
+    private val phonePermissions: Array<String>
+        get() = arrayOf(Manifest.permission.READ_PHONE_STATE, Manifest.permission.CALL_PHONE, Manifest.permission.READ_PHONE_NUMBERS)
+
+    override fun isDefaultPhoneApp(ctx: Context): Boolean =
+        (ctx.getSystemService(Context.TELECOM_SERVICE) as TelecomManager).defaultDialerPackage == ctx.packageName
+
+    override fun askToBeDefaultPhoneApp(activity: Activity) {
+        val intent = if (Build.VERSION.SDK_INT >= 29) {
+            val rm = activity.getSystemService(android.app.role.RoleManager::class.java)
+            rm.createRequestRoleIntent(android.app.role.RoleManager.ROLE_DIALER)
+        } else {
+            Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER)
+                .putExtra(TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, activity.packageName)
+        }
+        try {
+            activity.startActivityForResult(intent, Bridge.DIALER_REQUEST)
+        } catch (e: Exception) {
+            Log.e(TAG, "Default dialer request failed: ${e.javaClass.simpleName}")
+        }
+    }
+
+    override fun startSimCalls(activity: Activity): Boolean {
+        val missing = phonePermissions.filter { activity.checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
+        if (missing.isNotEmpty()) {
+            activity.requestPermissions(missing.toTypedArray(), Bridge.PHONE_REQUEST)
+            return false
+        }
+        // As upstream's own "Default Phone App" setting does once the role is granted.
+        BaresipService.instance?.addMobileUserAgent()
+        return true
+    }
+
+    override fun sim(): SimUi? {
+        val mobile = BaresipService.uas.value.firstOrNull { it.account.isMobile } ?: return null
+        return SimUi(id = mobile.account.aor, ready = mobile.status in BaresipService.circleGreen.values)
+    }
+
+    /** "Phone (SIM)", from BusyCall's strings. */
+    private fun simLabel(): String =
+        BaresipService.instance?.getString(com.tutpro.baresip.R.string.bc_sim_title) ?: "Phone (SIM)"
 
     override fun transfer(callId: Long, dial: String): Boolean {
         val call = Call.ofCallp(callId) ?: return false

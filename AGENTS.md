@@ -187,10 +187,15 @@ The full key table is `PLAN.md §3.1`. In code:
   the reason in plain words and Retry (guide §7). Never hide it.
 - Name numbers by the user's label ("Office") first, the extension or number second.
 - **"Phone (SIM)" is one more entry in the same list** (PLAN §5.2), not a SIP
-  account. Calling from it only fires `ACTION_DIAL` with a `tel:` URI on key UP,
-  and stops there. Never use `ACTION_CALL`, never request `CALL_PHONE`, and
-  never try to answer, track or log SIM calls. BusyCall is **not** the default
-  phone app.
+  account. By default, calling from it only fires `ACTION_DIAL` with a `tel:` URI
+  on key UP, and stops there.
+- **BusyCall as the phone's dialer** (owner's decision, 2026-11-20): only when the
+  user turns on Settings › "Use for phone (SIM) calls". Then BusyCall is the
+  default phone app, and SIM calls run through **upstream's** InCallService and
+  Mobile account (fork-only patch for Android 9, UPSTREAM.md), on BusyCall's own
+  call screens. `CALL_PHONE` / `READ_PHONE_STATE` are asked only at that moment.
+  Never write SIM call handling of our own, and always offer the way back
+  (Android's default-apps screen).
 
 ## 6a. Setup codes (PLAN §5.1)
 

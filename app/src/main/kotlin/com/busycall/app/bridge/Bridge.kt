@@ -90,6 +90,16 @@ data class CallUi(
     val durationSec: Int,
     /** The id of the user's number the call is on (for + Call, Transfer and Park from it). */
     val numberId: String = "",
+    /** A phone (SIM) call, run through upstream while BusyCall is the phone's dialer. */
+    val isSim: Boolean = false,
+)
+
+/** The phone's SIM as a way to call, while BusyCall is the default phone app. */
+data class SimUi(
+    /** Upstream's Mobile account id, used as the "from" of a SIM call. */
+    val id: String,
+    /** True when the SIM has mobile service. */
+    val ready: Boolean,
 )
 
 /** How connecting two calls (attended transfer, park) went. */
@@ -241,8 +251,27 @@ interface Bridge {
     /** Deletes one call-log entry. */
     fun deleteRecent(recent: RecentUi)
 
+    // ---- BusyCall as the phone's dialer (SIM calls through upstream's InCallService) ----
+
+    /** True when BusyCall is the phone's default dialer, so SIM calls run through it. */
+    fun isDefaultPhoneApp(ctx: android.content.Context): Boolean
+
+    /** Asks Android to make BusyCall the default dialer (answer comes to onActivityResult, [DIALER_REQUEST]). */
+    fun askToBeDefaultPhoneApp(activity: Activity)
+
+    /**
+     * Once BusyCall is the default dialer: asks for the phone permissions SIM calls need
+     * ([PHONE_REQUEST]) and returns false, or adds the SIM to upstream's accounts and returns true.
+     */
+    fun startSimCalls(activity: Activity): Boolean
+
+    /** The SIM while SIM calls run through BusyCall, else null. */
+    fun sim(): SimUi?
+
     companion object {
         const val CONTACTS_REQUEST = 4202
+        const val DIALER_REQUEST = 4205
+        const val PHONE_REQUEST = 4206
     }
 }
 

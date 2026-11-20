@@ -295,4 +295,38 @@ class CallsTest {
         vm.followNewest()
         assertEquals(2L, vm.state().call?.id)
     }
+
+    // ---- BusyCall as the phone's dialer ----
+
+    @Test fun `the SIM becomes a real choice while BusyCall is the phone's dialer`() {
+        val bridge = FakeBridge(numbers = mutableListOf(office))
+        // Not the dialer: Phone (SIM) only opens the phone's dialer (id null).
+        assertNull(CallFromDecision.choices(bridge, hasTelephony = true).last().id)
+        bridge.simUi = com.busycall.app.bridge.SimUi("sip:mobile@pstn", ready = true)
+        val sim = CallFromDecision.choices(bridge, hasTelephony = true).last()
+        assertEquals("sip:mobile@pstn", sim.id)
+        assertTrue(sim.isSim)
+        assertEquals(NumberStatus.Registered, sim.status)
+        bridge.simUi = com.busycall.app.bridge.SimUi("sip:mobile@pstn", ready = false)
+        assertEquals(NumberStatus.NoConnection, CallFromDecision.choices(bridge, hasTelephony = true).last().status)
+    }
+
+    @Test fun `the phone's dial requests open BusyCall's dialer and call log`() {
+        assertEquals(Route.Dialer, CallRouter.decide(null, Intent.ACTION_DIAL, null, false))
+        assertEquals(Route.Dialer, CallRouter.decide(null, Intent.ACTION_DIAL, null, false, dataScheme = "tel"))
+        assertEquals(Route.Dialer, CallRouter.decide(null, Intent.ACTION_CALL, null, false, dataScheme = "tel"))
+        assertEquals(Route.Dialer, CallRouter.decide(null, Intent.ACTION_VIEW, null, false, dataScheme = "sip"))
+        assertEquals(Route.CallLog, CallRouter.decide(null, Intent.ACTION_VIEW, null, false, mimeType = "vnd.android.cursor.dir/calls"))
+        assertEquals(Route.Upstream, CallRouter.decide(null, Intent.ACTION_VIEW, null, false, dataScheme = "https"))
+    }
+
+    @Test fun `SIM calls have no call options`() {
+        val bridge = FakeBridge()
+        bridge.calls.add(CallUi(7, "Mom", "tel:+15550142", "Phone (SIM)", false, CallState.Connected, 5, isSim = true))
+        val vm = InCallViewModel(bridge)
+        val s = vm.state()
+        assertEquals(InCallAction.Nothing, vm.actionFor(RingKey.Down, s))
+        assertEquals(InCallAction.HangUp, vm.actionFor(RingKey.Center, s))
+        assertEquals(InCallAction.Speaker, vm.actionFor(RingKey.Up, s))
+    }
 }
