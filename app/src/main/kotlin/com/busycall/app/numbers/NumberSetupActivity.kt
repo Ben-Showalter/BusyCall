@@ -43,6 +43,7 @@ class NumberSetupActivity : FlipBaseActivity() {
     private lateinit var password: EditText
     private lateinit var authUser: EditText
     private lateinit var voicemail: EditText
+    private lateinit var park: EditText
     private lateinit var transportValue: TextView
     private lateinit var plusValue: TextView
     private lateinit var natValue: TextView
@@ -64,6 +65,7 @@ class NumberSetupActivity : FlipBaseActivity() {
         password = findViewById(R.id.bc_setup_password)
         authUser = findViewById(R.id.bc_setup_auth_user)
         voicemail = findViewById(R.id.bc_setup_voicemail)
+        park = findViewById(R.id.bc_setup_park)
         transportValue = findViewById(R.id.bc_setup_transport_value)
         plusValue = findViewById(R.id.bc_setup_plus_value)
         natValue = findViewById(R.id.bc_setup_nat_value)
@@ -78,6 +80,7 @@ class NumberSetupActivity : FlipBaseActivity() {
         password.setText(draft.password)
         authUser.setText(draft.authUser)
         voicemail.setText(draft.voicemail)
+        park.setText(draft.parkNumber)
         transport = draft.transport
         showTransport()
         plusRule = draft.plusRule
@@ -224,6 +227,7 @@ class NumberSetupActivity : FlipBaseActivity() {
         plusRule = plusRule,
         nat = nat,
         stunServer = stun.text.toString().trim(),
+        parkNumber = park.text.toString().trim(),
     )
 
     private fun save() {

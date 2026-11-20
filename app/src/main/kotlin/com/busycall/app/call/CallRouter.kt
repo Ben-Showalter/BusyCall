@@ -1,7 +1,10 @@
 package com.busycall.app.call
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.os.Build
+import android.provider.Settings
 import com.busycall.app.bridge.Bridge
 import com.busycall.app.bridge.Bridges
 import com.busycall.app.bridge.CallState
@@ -57,6 +60,27 @@ object CallRouter {
         target.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         activity.startActivity(target)
         return true
+    }
+
+    /**
+     * An incoming call has just started ringing (one hook line in upstream's
+     * `BaresipService.handleIncomingCall`, UPSTREAM.md): show BusyCall's Incoming screen in front
+     * of any app (owner, 2026-11-20). Android 9 lets the service start it; on Android 10+ it needs
+     * "Appear on top", and otherwise upstream's full-screen notification remains the way in.
+     */
+    @JvmStatic
+    fun onIncomingCall(context: Context, callp: Long, bridge: Bridge = Bridges.current) {
+        // Only BusyCall's own (SIP) calls; Phone (SIM) calls stay with the phone (PLAN §5.2).
+        if (bridge.calls().none { it.id == callp && it.state == CallState.Ringing }) return
+        if (Build.VERSION.SDK_INT >= 29 && !Settings.canDrawOverlays(context)) return
+        val intent = Intent(context, IncomingCallActivity::class.java)
+            .putExtra(EXTRA_CALL_ID, callp)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        try {
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            // The notification is still there; nothing else to do.
+        }
     }
 
     const val EXTRA_CALL_ID = "com.busycall.app.call_id"

@@ -58,7 +58,8 @@ object Menus {
         dialog.show()
         dialog.listView?.apply {
             selector = activity.getDrawable(R.drawable.bc_focus_row)
-            setDrawSelectorOnTop(true)
+            // Behind the text: the gray focus tint is solid (owner, 2026-11-20: it hid the words).
+            setDrawSelectorOnTop(false)
             divider = null
             dividerHeight = 0
         }

@@ -24,6 +24,7 @@ object DraftExtras {
         .putExtra(P + "plus_prefix", (draft.plusRule as? PlusRule.ReplaceWith)?.prefix)
         .putExtra(P + "nat", draft.nat.param)
         .putExtra(P + "stun", draft.stunServer)
+        .putExtra(P + "park", draft.parkNumber)
 
     fun get(intent: Intent): NumberDraft? {
         if (!intent.hasExtra(P + "server")) return null
@@ -39,6 +40,7 @@ object DraftExtras {
             plusRule = PlusRule.of(intent.getStringExtra(P + "plus"), intent.getStringExtra(P + "plus_prefix")),
             nat = NatMode.fromParam(intent.getStringExtra(P + "nat")),
             stunServer = intent.getStringExtra(P + "stun").orEmpty(),
+            parkNumber = intent.getStringExtra(P + "park") ?: com.busycall.app.bridge.DEFAULT_PARK_NUMBER,
         )
     }
 }

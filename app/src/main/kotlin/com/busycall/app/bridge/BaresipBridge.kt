@@ -189,6 +189,7 @@ object BaresipBridge : Bridge {
                 else -> vm
             },
             plusRule = plusRuleOf(acc.aor),
+            parkNumber = parkNumber(acc.aor),
             nat = NatMode.fromParam(acc.mediaNat),
             stunServer = acc.stunServer.removePrefix("stun:"),
         )
@@ -253,6 +254,7 @@ object BaresipBridge : Bridge {
         BaresipService.aorPasswords.remove(acc.aor)
         Account.saveAccounts()
         savePlusRule(acc.aor, draft.plusRule)
+        savePark(acc.aor, draft)
         logPasswordState("added", acc)
         if (acc.regint > 0) ua.reRegister()
         return SaveResult.Saved(acc.aor)
@@ -295,6 +297,7 @@ object BaresipBridge : Bridge {
         applyNat(acc, draft)
         Account.saveAccounts()
         savePlusRule(acc.aor, draft.plusRule)
+        savePark(acc.aor, draft)
         logPasswordState("updated", acc)
         if (reRegister && acc.regint > 0) ua.reRegister()
         return SaveResult.Saved(acc.aor)
@@ -311,6 +314,7 @@ object BaresipBridge : Bridge {
         Api.ua_destroy(ua.uap)
         Account.saveAccounts()
         Prefs.setPlusRule(id, null, null)
+        Prefs.setParkNumber(id, null)
     }
 
     /** Network help, set through upstream's own account functions (as its account screen does). */
@@ -333,6 +337,8 @@ object BaresipBridge : Bridge {
     private fun savePlusRule(aor: String, rule: PlusRule) {
         Prefs.setPlusRule(aor, rule.key(), (rule as? PlusRule.ReplaceWith)?.prefix)
     }
+
+    private fun savePark(aor: String, draft: NumberDraft) = Prefs.setParkNumber(aor, draft.parkNumber.trim())
 
     override fun setDefault(id: String) {
         val ua = agentOf(id) ?: return
@@ -359,6 +365,7 @@ object BaresipBridge : Bridge {
             incoming = c.dir == "in",
             state = stateOf(c),
             durationSec = if (c.status.value == "connected") c.duration() else 0,
+            numberId = acc.aor,
         )
     }
 
@@ -372,18 +379,28 @@ object BaresipBridge : Bridge {
         else -> CallState.Connected // "connected", "transferring"
     }
 
-    override fun placeCall(activity: Activity, fromId: String?, dial: String): PlaceResult {
-        if (!isRunning()) return PlaceResult.Failed(PlaceProblem.ServiceNotRunning)
-        val ua = (fromId?.let { agentOf(it) } ?: sipAgents().firstOrNull())
-            ?: return PlaceResult.Failed(PlaceProblem.NoNumber)
+    /**
+     * What [dial] becomes as a SIP address on number [ua]: the + rule, upstream's own
+     * number-to-address rules (MainScreen.makeCall), and the number's own port and transport.
+     * Null if it isn't callable.
+     */
+    private fun addressFor(ua: UserAgent, dial: String): String? {
         // Numbers starting with + as this number's phone system wants them (PlusRule).
         val text = plusRuleOf(ua.account.aor).apply(dial.trim())
-        // Same number-to-address rules as upstream's dialer (MainScreen.makeCall), SIP accounts only.
         val peerUri = if (Utils.isTelNumber(text)) "tel:$text" else text
         val built = if (Utils.isTelUri(peerUri)) Utils.telToSip(peerUri, ua.account) else Utils.uriComplete(peerUri, ua.account.aor)
         // Same port and transport as the number signs in with (SipAddress.withAccountRoute).
         val uri = SipAddress.withAccountRoute(built, ua.account.luri.ifEmpty { ua.account.aor })
-        if (!Utils.checkUri(uri)) return PlaceResult.Failed(PlaceProblem.InvalidAddress)
+        return uri.takeIf { Utils.checkUri(it) }
+    }
+
+    override fun placeCall(activity: Activity, fromId: String?, dial: String, holdCallId: Long?): PlaceResult {
+        if (!isRunning()) return PlaceResult.Failed(PlaceProblem.ServiceNotRunning)
+        // A second call goes out on the same number as the held one.
+        val held = holdCallId?.let { Call.ofCallp(it) }
+        val ua = held?.ua ?: (fromId?.let { agentOf(it) } ?: sipAgents().firstOrNull())
+            ?: return PlaceResult.Failed(PlaceProblem.NoNumber)
+        val uri = addressFor(ua, dial) ?: return PlaceResult.Failed(PlaceProblem.InvalidAddress)
         // A phone (SIM) call is in progress and none of ours: upstream refuses too.
         if (Utils.isAudioMode(activity, AudioManager.MODE_IN_CALL) && Call.calls().none { it.ua.uap == ua.uap }) {
             return PlaceResult.Failed(PlaceProblem.PhoneBusy)
@@ -396,6 +413,8 @@ object BaresipBridge : Bridge {
         val callExtras = Bundle()
         callExtras.putBoolean("conferenceCall", false)
         callExtras.putLong("uap", ua.uap)
+        // Upstream links the new call to the held one (runCall's onHoldCallp), for connectCalls.
+        if (held != null) callExtras.putLong("onHoldCallp", held.callp)
         extras.putBundle(TelecomManager.EXTRA_OUTGOING_CALL_EXTRAS, callExtras)
         return try {
             val tm = activity.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
@@ -424,6 +443,23 @@ object BaresipBridge : Bridge {
     override fun answer(activity: Activity, callId: Long) = serviceCommand(activity, "Call Answer", callId)
     override fun decline(activity: Activity, callId: Long) = serviceCommand(activity, "Call Reject", callId)
     override fun hangup(activity: Activity, callId: Long) = serviceCommand(activity, "Call Hangup", callId)
+
+    override fun transfer(callId: Long, dial: String): Boolean {
+        val call = Call.ofCallp(callId) ?: return false
+        val uri = addressFor(call.ua, dial) ?: return false
+        // Upstream's blind transfer: holds the call, then REFERs it (Call.transfer).
+        return call.transfer(uri)
+    }
+
+    override fun connectCalls(callIdA: Long, callIdB: Long): Boolean {
+        // The call placed second carries the link (onHoldCall); upstream's executeTransfer holds it
+        // and REFERs the held call to it with Replaces, which connects the two.
+        val calls = listOfNotNull(Call.ofCallp(callIdA), Call.ofCallp(callIdB))
+        val second = calls.firstOrNull { it.onHoldCall != null && it.onHoldCall in calls } ?: return false
+        return second.executeTransfer()
+    }
+
+    override fun parkNumber(numberId: String): String = Prefs.parkNumber(numberId) ?: DEFAULT_PARK_NUMBER
 
     override fun sendDigit(callId: Long, digit: Char) {
         Call.ofCallp(callId)?.sendDigit(digit)

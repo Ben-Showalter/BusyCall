@@ -88,6 +88,8 @@ data class CallUi(
     val incoming: Boolean,
     val state: CallState,
     val durationSec: Int,
+    /** The id of the user's number the call is on (for + Call, Transfer and Park from it). */
+    val numberId: String = "",
 )
 
 /** Why a call couldn't be placed; each maps to a plain-language message. */
@@ -114,7 +116,12 @@ data class NumberDraft(
     val nat: NatMode = NatMode.Off,
     /** STUN server host (`nat-a.gdms.cloud`) or URI, used when [nat] isn't Off. */
     val stunServer: String = "",
+    /** The phone system's call-park number (`700` on Asterisk-based systems); empty hides Park. */
+    val parkNumber: String = DEFAULT_PARK_NUMBER,
 )
+
+/** Call park on Asterisk-based systems (Grandstream UCM included); a per-number setting. */
+const val DEFAULT_PARK_NUMBER = "700"
 
 /**
  * Network help for call audio (upstream's per-account `medianat`): needed when the phone and
@@ -176,8 +183,21 @@ interface Bridge {
     /** All current calls, newest last. */
     fun calls(): List<CallUi>
 
-    /** Places a call to [dial] (a number or SIP address) from number [fromId] (null = ★ default). */
-    fun placeCall(activity: Activity, fromId: String?, dial: String): PlaceResult
+    /**
+     * Places a call to [dial] (a number or SIP address) from number [fromId] (null = ★ default).
+     * With [holdCallId] it's a second call while that one is on hold, linked to it, so the two
+     * can later be connected ([connectCalls]).
+     */
+    fun placeCall(activity: Activity, fromId: String?, dial: String, holdCallId: Long? = null): PlaceResult
+
+    /** Blind transfer: sends call [callId] to [dial] (same number rules as [placeCall]). */
+    fun transfer(callId: Long, dial: String): Boolean
+
+    /** Attended transfer / park: connects a held call and the call placed after it. */
+    fun connectCalls(callIdA: Long, callIdB: Long): Boolean
+
+    /** The park number of number [numberId] (empty: no Park). */
+    fun parkNumber(numberId: String): String
 
     fun answer(activity: Activity, callId: Long)
     fun decline(activity: Activity, callId: Long)

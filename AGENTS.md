@@ -148,7 +148,8 @@ The full key table is `PLAN.md §3.1`. In code:
   The same goes for **holding OK or CALL** to call from ★ (`FlipBaseActivity.usesCallHold`,
   700 ms; inside menus `Menus.show(onHold = …)`).
 - **In a call, the D-pad is the ring:** ▲ Speaker · ◀ Mute · ▶ Hold/Resume/Swap ·
-  ▼ + Call · OK = End. The screen claims those keys (`claimsKey`), so focus never moves.
+  ▼ Call options (Add a call · Transfer… · Park; Transfer with two calls) · OK = End (Park on
+  a call to the park number). The screen claims those keys (`claimsKey`), so focus never moves.
 - **Clear arrives as `BACK`.** In the number field: delete a digit while there is
   one; at an empty field, go back.
 - **BACK never hangs up and never declines.** On an incoming call it silences the

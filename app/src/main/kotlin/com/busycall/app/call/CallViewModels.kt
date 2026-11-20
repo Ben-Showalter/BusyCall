@@ -42,13 +42,29 @@ data class InCallState(
     val sentDigits: String,
     /** The other call, when there are two (one is on hold). */
     val other: CallUi? = null,
+    /** This call is to the park number while the other is held: OK parks it there. */
+    val parking: Boolean = false,
+    /** The park number of this call's number (empty: no Park). */
+    val parkNumber: String = "",
 )
+
+/** The ▼ menu with one call (owner, 2026-11-20). */
+enum class CallMenuItem { AddCall, Transfer, Park }
 
 /** The five keys of the in-call D-pad ring (owner, 2026-11-20). */
 enum class RingKey { Up, Down, Left, Right, Center }
 
 /** What a ring key does now. */
-enum class InCallAction { Speaker, Mute, Hold, Resume, Swap, AddCall, HangUp, Nothing }
+enum class InCallAction {
+    Speaker, Mute, Hold, Resume, Swap,
+    /** ▼ with one call: Add a call · Transfer… · Park. */
+    CallMenu,
+    /** ▼ with two calls: connect them (attended transfer), you drop off. */
+    Connect,
+    /** OK on a call to the park number: park the held caller there. */
+    ParkDone,
+    HangUp, Nothing,
+}
 
 class InCallViewModel(private val bridge: Bridge = Bridges.current) {
     var callId: Long? = null
@@ -62,6 +78,9 @@ class InCallViewModel(private val bridge: Bridge = Bridges.current) {
             sent.setLength(0)
         }
         val other = calls.lastOrNull { it.id != call?.id && it.state != CallState.Ended && it.state != CallState.Ringing }
+        val park = call?.let { bridge.parkNumber(it.numberId) }.orEmpty()
+        val parking = call != null && other != null && park.isNotEmpty() &&
+            com.busycall.app.bridge.PeerName.userPart(call.peerUri) == park
         return InCallState(
             call = call,
             timer = if (call?.state == CallState.Connected || call?.state == CallState.OnHold) CallText.duration(call.durationSec) else "",
@@ -69,6 +88,8 @@ class InCallViewModel(private val bridge: Bridge = Bridges.current) {
             speaker = bridge.isSpeakerOn(),
             sentDigits = sent.toString(),
             other = other,
+            parking = parking,
+            parkNumber = park,
         )
     }
 
@@ -84,15 +105,20 @@ class InCallViewModel(private val bridge: Bridge = Bridges.current) {
 
     /**
      * The ring: ▲ Speaker · ◀ Mute · ▶ Hold (Resume when on hold, Swap with two calls) ·
-     * ▼ + Call · OK End. Pure, unit-tested.
+     * ▼ the call menu (Transfer with two calls) · OK End (Park on a call to the park number).
+     * Pure, unit-tested.
      */
     fun actionFor(key: RingKey, state: InCallState): InCallAction {
         val call = state.call ?: return if (key == RingKey.Center) InCallAction.HangUp else InCallAction.Nothing
         return when (key) {
             RingKey.Up -> InCallAction.Speaker
             RingKey.Left -> InCallAction.Mute
-            RingKey.Center -> InCallAction.HangUp
-            RingKey.Down -> if (state.other == null && call.state == CallState.Connected) InCallAction.AddCall else InCallAction.Nothing
+            RingKey.Center -> if (state.parking && call.state == CallState.Connected) InCallAction.ParkDone else InCallAction.HangUp
+            RingKey.Down -> when {
+                state.other != null && call.state == CallState.Connected -> InCallAction.Connect
+                state.other == null && call.state == CallState.Connected -> InCallAction.CallMenu
+                else -> InCallAction.Nothing
+            }
             RingKey.Right -> when {
                 state.other != null -> InCallAction.Swap
                 call.state == CallState.Connected -> InCallAction.Hold
@@ -120,6 +146,27 @@ class InCallViewModel(private val bridge: Bridge = Bridges.current) {
         state.call?.let { if (it.state == CallState.Connected) bridge.hold(it.id) }
         if (other.state == CallState.OnHold) bridge.resume(other.id)
         callId = other.id
+        sent.setLength(0)
+    }
+
+    /** What ▼'s menu offers for this call: Park only when its number has a park number. */
+    fun menuItems(state: InCallState): List<CallMenuItem> = buildList {
+        add(CallMenuItem.AddCall)
+        add(CallMenuItem.Transfer)
+        if (state.parkNumber.isNotEmpty()) add(CallMenuItem.Park)
+    }
+
+    /** Connects the two calls (attended transfer or park). */
+    fun connect(): Boolean {
+        val state = state()
+        val call = state.call ?: return false
+        val other = state.other ?: return false
+        return bridge.connectCalls(call.id, other.id)
+    }
+
+    /** After placing a second call: show the newest one. */
+    fun followNewest() {
+        callId = null
         sent.setLength(0)
     }
 

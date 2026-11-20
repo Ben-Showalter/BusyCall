@@ -17,6 +17,7 @@ import com.busycall.app.call.InCallAction
 import com.busycall.app.call.InCallViewModel
 import com.busycall.app.call.IncomingViewModel
 import com.busycall.app.call.CallFromDecision
+import com.busycall.app.call.CallMenuItem
 import com.busycall.app.call.CallFromStep
 import com.busycall.app.call.RingKey
 import com.busycall.app.dialer.DialTarget
@@ -97,14 +98,14 @@ class CallsTest {
         assertEquals(InCallAction.Speaker, vm.actionFor(RingKey.Up, s))
         assertEquals(InCallAction.Mute, vm.actionFor(RingKey.Left, s))
         assertEquals(InCallAction.Hold, vm.actionFor(RingKey.Right, s))
-        assertEquals(InCallAction.AddCall, vm.actionFor(RingKey.Down, s))
+        assertEquals(InCallAction.CallMenu, vm.actionFor(RingKey.Down, s))
         assertEquals(InCallAction.HangUp, vm.actionFor(RingKey.Center, s))
         vm.toggleMute(); vm.toggleSpeaker()
         assertTrue(vm.state().muted)
         assertTrue(vm.state().speaker)
         vm.hold()
         assertEquals(InCallAction.Resume, vm.actionFor(RingKey.Right, vm.state()))
-        assertEquals(InCallAction.Nothing, vm.actionFor(RingKey.Down, vm.state())) // + Call only from a live call
+        assertEquals(InCallAction.Nothing, vm.actionFor(RingKey.Down, vm.state())) // the menu only from a live call
         vm.resume()
         assertEquals(CallState.Connected, vm.state().call?.state)
     }
@@ -184,7 +185,7 @@ class CallsTest {
         assertEquals(2L, s.call?.id) // the newest
         assertEquals(1L, s.other?.id)
         assertEquals(InCallAction.Swap, vm.actionFor(RingKey.Right, s))
-        assertEquals(InCallAction.Nothing, vm.actionFor(RingKey.Down, s)) // two calls already
+        assertEquals(InCallAction.Connect, vm.actionFor(RingKey.Down, s)) // two calls: ▼ connects them
         vm.swap()
         assertEquals(CallState.OnHold, bridge.calls.first { it.id == 2L }.state)
         assertEquals(CallState.Connected, bridge.calls.first { it.id == 1L }.state)
@@ -216,5 +217,60 @@ class CallsTest {
         assertFalse(t.press('5'))
         assertNull(t.fire())
         assertEquals('5', t.release('5'))
+    }
+
+    // ---- Transfer and park (owner, 2026-11-20) ----
+
+    private fun callOn(id: Long, state: CallState, peer: String) =
+        CallUi(id, "Peer", peer, "Office · 104", false, state, 10, numberId = "sip:104@pbx")
+
+    @Test fun `the down key menu offers add, transfer and park when there is a park number`() {
+        val bridge = FakeBridge()
+        bridge.calls.add(callOn(1, CallState.Connected, "sip:5550198@pbx"))
+        val vm = InCallViewModel(bridge)
+        val s = vm.state()
+        assertEquals("700", s.parkNumber)
+        assertEquals(listOf(CallMenuItem.AddCall, CallMenuItem.Transfer, CallMenuItem.Park), vm.menuItems(s))
+        bridge.parkNumbers["sip:104@pbx"] = ""
+        assertEquals(listOf(CallMenuItem.AddCall, CallMenuItem.Transfer), vm.menuItems(vm.state()))
+    }
+
+    @Test fun `two live calls - down connects them`() {
+        val bridge = FakeBridge()
+        bridge.calls.add(callOn(1, CallState.OnHold, "sip:5550198@pbx"))
+        bridge.calls.add(callOn(2, CallState.Connected, "sip:105@pbx"))
+        val vm = InCallViewModel(bridge)
+        val s = vm.state()
+        assertEquals(InCallAction.Connect, vm.actionFor(RingKey.Down, s))
+        assertEquals(InCallAction.HangUp, vm.actionFor(RingKey.Center, s))
+        assertTrue(vm.connect())
+        assertEquals(listOf(2L to 1L), bridge.connected)
+    }
+
+    @Test fun `calling the park number turns OK into Park`() {
+        val bridge = FakeBridge()
+        bridge.calls.add(callOn(1, CallState.OnHold, "sip:5550198@pbx"))
+        bridge.calls.add(callOn(2, CallState.Connected, "sip:700@pbx"))
+        val vm = InCallViewModel(bridge)
+        val s = vm.state()
+        assertTrue(s.parking)
+        assertEquals(InCallAction.ParkDone, vm.actionFor(RingKey.Center, s))
+        // Not yet answered by the park service: OK still ends it.
+        bridge.setState(2, CallState.Dialing)
+        assertEquals(InCallAction.HangUp, vm.actionFor(RingKey.Center, vm.state()))
+        // A single call to 700 isn't parking anything.
+        val solo = FakeBridge().apply { calls.add(callOn(3, CallState.Connected, "sip:700@pbx")) }
+        assertFalse(InCallViewModel(solo).state().parking)
+    }
+
+    @Test fun `following the newest call after placing a second one`() {
+        val bridge = FakeBridge()
+        bridge.calls.add(callOn(1, CallState.OnHold, "sip:5550198@pbx"))
+        val vm = InCallViewModel(bridge)
+        vm.callId = 1L
+        bridge.calls.add(callOn(2, CallState.Dialing, "sip:700@pbx"))
+        assertEquals(1L, vm.state().call?.id)
+        vm.followNewest()
+        assertEquals(2L, vm.state().call?.id)
     }
 }

@@ -12,6 +12,7 @@ import com.busycall.app.bridge.CallState
 import com.busycall.app.dialer.DialerActivity
 import com.busycall.app.keys.LogicalKey
 import com.busycall.app.ui.FlipBaseActivity
+import com.busycall.app.ui.MenuItem
 import com.tutpro.baresip.R
 
 /**
@@ -148,9 +149,15 @@ class InCallActivity : FlipBaseActivity() {
             InCallAction.Hold -> viewModel.hold()
             InCallAction.Resume -> viewModel.resume()
             InCallAction.Swap -> viewModel.swap()
-            InCallAction.AddCall -> {
-                viewModel.prepareAddCall()
-                startActivity(Intent(this, DialerActivity::class.java).putExtra(DialerActivity.EXTRA_ADD_CALL, true))
+            InCallAction.CallMenu -> showCallMenu()
+            InCallAction.Connect -> {
+                // Attended transfer: the two are connected and this phone drops off.
+                Toast.makeText(this, if (viewModel.connect()) R.string.bc_transfer_done else R.string.bc_transfer_failed,
+                    Toast.LENGTH_LONG).show()
+            }
+            InCallAction.ParkDone -> {
+                Toast.makeText(this, if (viewModel.connect()) R.string.bc_park_done else R.string.bc_park_failed,
+                    Toast.LENGTH_LONG).show()
             }
             InCallAction.HangUp -> {
                 viewModel.callId?.let { Bridges.current.hangup(this, it) }
@@ -158,6 +165,48 @@ class InCallActivity : FlipBaseActivity() {
                 if (!viewModel.followOther()) finish()
             }
             InCallAction.Nothing -> {}
+        }
+        lastState = null
+        refresh()
+    }
+
+    /** ▼ with one call (owner, 2026-11-20): Add a call · Transfer… · Park. */
+    private fun showCallMenu() {
+        val state = lastState ?: viewModel.state()
+        val call = state.call ?: return
+        val items = viewModel.menuItems(state).map { item ->
+            when (item) {
+                CallMenuItem.AddCall -> MenuItem(getString(R.string.bc_callmenu_add), getString(R.string.bc_callmenu_add_sub)) {
+                    viewModel.prepareAddCall()
+                    startActivity(Intent(this, DialerActivity::class.java)
+                        .putExtra(DialerActivity.EXTRA_ADD_CALL, true)
+                        .putExtra(DialerActivity.EXTRA_HOLD_CALL_ID, call.id))
+                }
+                CallMenuItem.Transfer -> MenuItem(getString(R.string.bc_callmenu_transfer), getString(R.string.bc_callmenu_transfer_sub)) {
+                    startActivity(Intent(this, DialerActivity::class.java)
+                        .putExtra(DialerActivity.EXTRA_TRANSFER_CALL_ID, call.id))
+                }
+                CallMenuItem.Park -> MenuItem(
+                    getString(R.string.bc_callmenu_park),
+                    getString(R.string.bc_callmenu_park_sub, state.parkNumber),
+                ) { park(call.id, state.parkNumber) }
+            }
+        }
+        com.busycall.app.ui.Menus.show(this, getString(R.string.bc_callmenu_title), items)
+    }
+
+    /**
+     * Park like a desk phone: hold the caller, call the park number (the phone system announces
+     * the slot), then OK ("Park") connects the two, leaving the caller in the slot.
+     */
+    private fun park(callId: Long, parkNumber: String) {
+        viewModel.prepareAddCall()
+        when (val result = Bridges.current.placeCall(this, null, parkNumber, holdCallId = callId)) {
+            com.busycall.app.bridge.PlaceResult.Placed -> viewModel.followNewest()
+            is com.busycall.app.bridge.PlaceResult.Failed -> {
+                viewModel.resume()
+                Toast.makeText(this, Calling.problemText(result.problem), Toast.LENGTH_LONG).show()
+            }
         }
         lastState = null
         refresh()
@@ -224,7 +273,10 @@ class InCallActivity : FlipBaseActivity() {
             0, if (right == InCallAction.Resume) R.drawable.bc_ic_resume else R.drawable.bc_ic_hold, 0, 0,
         )
         hold.isEnabled = right != InCallAction.Nothing
-        add.isEnabled = viewModel.actionFor(RingKey.Down, state) == InCallAction.AddCall
+        val down = viewModel.actionFor(RingKey.Down, state)
+        add.setText(if (down == InCallAction.Connect) R.string.bc_call_transfer else R.string.bc_call_add)
+        add.isEnabled = down != InCallAction.Nothing
+        end.setText(if (viewModel.actionFor(RingKey.Center, state) == InCallAction.ParkDone) R.string.bc_call_park else R.string.bc_call_end_short)
         add.alpha = if (add.isEnabled) 1f else 0.4f
         hold.alpha = if (hold.isEnabled) 1f else 0.4f
     }

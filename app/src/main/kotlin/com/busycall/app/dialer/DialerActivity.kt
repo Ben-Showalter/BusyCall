@@ -9,7 +9,12 @@ import android.text.style.UnderlineSpan
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.content.Intent
+import android.widget.Toast
+import com.busycall.app.bridge.Bridges
+import com.busycall.app.bridge.PlaceResult
 import com.busycall.app.call.Calling
+import com.busycall.app.call.InCallActivity
 import com.busycall.app.keys.HoldTimer
 import com.busycall.app.keys.LogicalKey
 import com.busycall.app.ui.FlipBaseActivity
@@ -50,11 +55,22 @@ class DialerActivity : FlipBaseActivity() {
 
     override val usesCallHold = true
 
+    /** "Add a call" from a call: the new call goes out on the held call's number, linked to it. */
+    private var holdCallId: Long? = null
+    /** "Transfer to": OK/CALL sends that call to the number instead of calling. */
+    private var transferCallId: Long? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.bc_activity_dialer)
+        holdCallId = intent.getLongExtra(EXTRA_HOLD_CALL_ID, 0L).takeIf { it != 0L }
+        transferCallId = intent.getLongExtra(EXTRA_TRANSFER_CALL_ID, 0L).takeIf { it != 0L }
         findViewById<TextView>(R.id.bc_title).setText(
-            if (intent.getBooleanExtra(EXTRA_ADD_CALL, false)) R.string.bc_dialer_add_title else R.string.bc_dialer_title,
+            when {
+                transferCallId != null -> R.string.bc_dialer_transfer_title
+                intent.getBooleanExtra(EXTRA_ADD_CALL, false) -> R.string.bc_dialer_add_title
+                else -> R.string.bc_dialer_title
+            }
         )
         setFooterHint(getString(R.string.bc_dialer_footer))
         number = findViewById(R.id.bc_dialer_number)
@@ -109,7 +125,31 @@ class DialerActivity : FlipBaseActivity() {
     }
 
     private fun call(match: DialMatch?, held: Boolean) {
-        when (val target = viewModel.target(match)) {
+        val target = viewModel.target(match)
+        val transferId = transferCallId
+        val holdId = holdCallId
+        if (target is DialTarget.Dial && transferId != null) {
+            // Blind transfer (owner, 2026-11-20): no Call from… picker; the call ends when it's done.
+            if (Bridges.current.transfer(transferId, target.dial)) {
+                Toast.makeText(this, R.string.bc_transfer_done, Toast.LENGTH_LONG).show()
+                finish()
+            } else {
+                showError(getString(R.string.bc_transfer_failed))
+            }
+            return
+        }
+        if (target is DialTarget.Dial && holdId != null) {
+            when (val result = Bridges.current.placeCall(this, null, target.dial, holdCallId = holdId)) {
+                PlaceResult.Placed -> {
+                    startActivity(Intent(this, InCallActivity::class.java)
+                        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+                    finish()
+                }
+                is PlaceResult.Failed -> showError(getString(Calling.problemText(result.problem)))
+            }
+            return
+        }
+        when (target) {
             is DialTarget.Dial -> Calling.start(
                 this, target.dial, target.shown, held,
                 onPlaced = { finish() },
@@ -170,7 +210,11 @@ class DialerActivity : FlipBaseActivity() {
 
     companion object {
         const val EXTRA_NUMBER = "com.busycall.app.dial_number"
-        /** Opened from a call's "+ Call": the first call is already on hold. */
+        /** Opened from a call's "Add a call": the first call is already on hold. */
         const val EXTRA_ADD_CALL = "com.busycall.app.add_call"
+        /** With EXTRA_ADD_CALL: the held call the new one is linked to. */
+        const val EXTRA_HOLD_CALL_ID = "com.busycall.app.hold_call_id"
+        /** "Transfer to": the call to transfer. */
+        const val EXTRA_TRANSFER_CALL_ID = "com.busycall.app.transfer_call_id"
     }
 }

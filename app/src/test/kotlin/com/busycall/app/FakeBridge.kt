@@ -59,11 +59,21 @@ class FakeBridge(
     var silenced = 0
 
     override fun calls(): List<CallUi> = calls.toList()
-    override fun placeCall(activity: Activity, fromId: String?, dial: String): PlaceResult {
+    val heldFor = mutableListOf<Long?>()
+    override fun placeCall(activity: Activity, fromId: String?, dial: String, holdCallId: Long?): PlaceResult {
         placeProblem?.let { return PlaceResult.Failed(it) }
         placed.add(fromId to dial)
+        heldFor.add(holdCallId)
         return PlaceResult.Placed
     }
+
+    val transfers = mutableListOf<Pair<Long, String>>()
+    val connected = mutableListOf<Pair<Long, Long>>()
+    var transferWorks = true
+    var parkNumbers = mutableMapOf<String, String>()
+    override fun transfer(callId: Long, dial: String): Boolean { transfers.add(callId to dial); return transferWorks }
+    override fun connectCalls(callIdA: Long, callIdB: Long): Boolean { connected.add(callIdA to callIdB); return transferWorks }
+    override fun parkNumber(numberId: String): String = parkNumbers[numberId] ?: com.busycall.app.bridge.DEFAULT_PARK_NUMBER
     override fun answer(activity: Activity, callId: Long) { answered.add(callId) }
     override fun decline(activity: Activity, callId: Long) { declined.add(callId) }
     override fun hangup(activity: Activity, callId: Long) { hungUp.add(callId) }

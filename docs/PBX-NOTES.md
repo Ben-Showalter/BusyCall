@@ -41,3 +41,9 @@ Number settings that work from cell data (E4810, 2026-11-20):
 - The Basic plan limits remote calls to 20 minutes each and 120 minutes a day, 2 at once.
 - The UCM sends incoming calls from its LAN IP; BusyCall shows phone-number callers as the
   number whatever host they come from (`bridge/PeerName`).
+
+## Call park (Asterisk-based systems, Grandstream UCM)
+Parking is a transfer to the park number (`700` by default). BusyCall parks like a desk phone:
+the caller holds, BusyCall calls 700, the system announces the slot (e.g. 701) to you, and OK
+("Park") connects the two (upstream's attended transfer), leaving the caller in the slot.
+Anyone dials the slot number to pick it up. The park number is a per-number setting.

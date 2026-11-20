@@ -165,6 +165,9 @@
     <string name="bc_field_auth_user_hint">same as extension</string>
     <string name="bc_field_voicemail">Voicemail number</string>
     <string name="bc_field_voicemail_hint">*97</string>
+    <!-- The phone system's call-park number; empty hides Park in calls. -->
+    <string name="bc_field_park">Park number</string>
+    <string name="bc_field_park_hint">700</string>
     <string name="bc_save_connect">Save and connect</string>
     <string name="bc_show_password">Show password</string>
     <string name="bc_hide_password">Hide password</string>
@@ -225,6 +228,23 @@
     <string name="bc_call_end">End call</string>
     <!-- Short label on the red key in the middle of the in-call ring. -->
     <string name="bc_call_end_short">End</string>
+    <!-- The centre key while calling the park number: OK parks the held caller. -->
+    <string name="bc_call_park">Park</string>
+    <!-- The ▼ key with two calls: connects them (attended transfer). -->
+    <string name="bc_call_transfer">Transfer</string>
+    <!-- ▼'s menu with one call. -->
+    <string name="bc_callmenu_title">Call options</string>
+    <string name="bc_callmenu_add">Add a call</string>
+    <string name="bc_callmenu_add_sub">This call waits on hold; ▼ Transfer connects them</string>
+    <string name="bc_callmenu_transfer">Transfer…</string>
+    <string name="bc_callmenu_transfer_sub">Send this caller to another number</string>
+    <string name="bc_callmenu_park">Park</string>
+    <!-- %1$s = the park number, e.g. "700". -->
+    <string name="bc_callmenu_park_sub">Calls %1$s, you hear the slot, then OK parks</string>
+    <string name="bc_transfer_done">Transferred</string>
+    <string name="bc_transfer_failed">The transfer didn\'t go through. The call is still on.</string>
+    <string name="bc_park_done">Parked. Dial the slot number from any phone to pick it up.</string>
+    <string name="bc_park_failed">The call couldn\'t be parked. It\'s still on hold.</string>
     <!-- Ring action: place another call (the current one goes on hold). -->
     <string name="bc_call_add">+ Call</string>
     <!-- Ring action with two calls: switch to the other one. -->
@@ -250,6 +270,8 @@
     <string name="bc_dialer_title">New call</string>
     <!-- Dialer title when opened from a call's "+ Call". -->
     <string name="bc_dialer_add_title">Add a call</string>
+    <!-- Dialer title when transferring a call. -->
+    <string name="bc_dialer_transfer_title">Transfer to</string>
     <!-- The Call from… picker. %1$s = the number being called. -->
     <string name="bc_callfrom_title">Call %1$s from</string>
     <string name="bc_callfrom_tip">Tip: hold OK or CALL to call from ★</string>

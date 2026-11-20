@@ -13,8 +13,8 @@ Everywhere (`ui/FlipBaseActivity`): while a call is active, an **"On call · 03:
 MENU press, or Settings › Options key). The footer's "Options" label is also tappable.
 OK activates the focused row or button. BACK goes back (Clear is BACK on Kyocera). Unknown
 keys show "Unhandled key N (scan M)". Actions fire on key UP.
-Menus and confirmations are `AlertDialog`s drawn as a rounded dark card with an accent-red
-title (and an optional question under it); the selected row gets the red focus ring.
+Menus and confirmations are `AlertDialog`s drawn as a rounded dark card with an accent title
+(and an optional question under it); the selected row gets the focus ring, drawn behind its text.
 
 ## S1 Home (`home/HomeActivity`) — launcher
 - **Shows:** "My numbers": each number as `Name · extension` with a status dot and either its
@@ -87,6 +87,7 @@ title (and an optional question under it); the selected row gets the red focus r
   **More options…** (opens Options, since the T9 keyboard can take the softkeys).
 - **Editing:** title "Edit number"; an empty password keeps the saved one (note shown).
 - **Errors:** plain words at the top (and a toast), focus moves to the field.
+- **Park number** field (default `700`, hint `700`; empty hides Park in calls).
 - **Options:** Show/Hide password · Connection · Numbers starting with + · Network help (NAT).
 - Every call from the number applies its + rule to `+` numbers (contacts store `+1 555…`);
   extensions and SIP addresses are never changed.
@@ -131,8 +132,9 @@ title (and an optional question under it); the selected row gets the red focus r
 - **Options:** Call back · Delete, for the focused call.
 
 ## S4 Incoming call (`call/IncomingCallActivity`)
-- Opened from upstream's ring notification (via `call/CallRouter`), over the lock screen and a
-  closed flip. **Shows:** "to Office · 104", caller name, number (`(378) 234-3189`); **Answer**
+- Opens by itself in front of any app when a call rings (one hook line in upstream's
+  `handleIncomingCall` → `CallRouter.onIncomingCall`; Android 10+ also needs "Appear on top"),
+  and from upstream's ring notification, over the lock screen and a closed flip. **Shows:** "to Office · 104", caller name, number (`(378) 234-3189`); **Answer**
   (green, focused), **Decline** (red); hint "CALL answers · END declines · BACK silences".
 - **Keys:** CALL / headset = answer → S5. END = decline, then the system's own END action.
   Outer END = decline. BACK = silence the ringer only.
@@ -144,9 +146,15 @@ title (and an optional question under it); the selected row gets the red focus r
   "from/to Office · 104"; name; number (`(378) 234-3189`); with two calls, the other one
   ("Anna Becker · On hold"); "Sent: 1234#" once tones are sent; the **D-pad ring** (a rounded
   square): ▲ **Speaker**, ◀ **Mute**, ▶ **Hold** (Resume when on hold; **Swap** with two calls),
-  ▼ **+ Call**, and the red **End** in the middle (focused). Lit petal = on. No End call bar.
+  ▼ **+ Call** (**Transfer** with two calls), and the red **End** in the middle (focused; **Park**
+  on a call to the park number). Lit petal = on. No End call bar.
 - **Keys:** the arrows and OK act directly (focus never moves): ▲ speaker, ◀ mute, ▶ hold /
-  resume / swap, ▼ + Call (holds this call, opens the Dialer as "Add a call"), OK = End.
+  resume / swap, OK = End. **▼ with one call** opens "Call options": **Add a call** (this call
+  holds; the Dialer opens as "Add a call", calling from the same number) · **Transfer…** (the
+  Dialer opens as "Transfer to"; OK/CALL sends the caller there: "Transferred", or "The transfer
+  didn't go through. The call is still on.") · **Park** (when the number has a park number: the
+  caller holds, BusyCall calls the park number, the phone system announces the slot, OK =
+  **Park** leaves the caller there). **▼ with two calls** = **Transfer**: connects them, you drop off.
   0–9 `*` `#` send keypad tones the moment they're pressed (once connected). END = hang up, then
   the system's own END action. Outer END / headset = hang up. Outer Speaker = speaker. BACK
   leaves the screen; the call goes on (the On-call bar shows elsewhere).

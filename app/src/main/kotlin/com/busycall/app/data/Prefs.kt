@@ -12,6 +12,7 @@ object Prefs {
     private const val KEY_CONTACTS_ASKED = "contacts_asked"
     private const val KEY_PLUS_RULE = "plus_rule:"
     private const val KEY_PLUS_PREFIX = "plus_prefix:"
+    private const val KEY_PARK = "park_number:"
 
     private fun prefs(ctx: Context): SharedPreferences =
         ctx.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
@@ -35,6 +36,14 @@ object Prefs {
     fun plusRule(aor: String): Pair<String?, String?> {
         val p = app?.let { prefs(it) } ?: return null to null
         return p.getString(KEY_PLUS_RULE + aor, null) to p.getString(KEY_PLUS_PREFIX + aor, null)
+    }
+
+    /** The call-park number of number [aor]; null if never set (the default applies). */
+    fun parkNumber(aor: String): String? = app?.let { prefs(it) }?.getString(KEY_PARK + aor, null)
+
+    fun setParkNumber(aor: String, number: String?) {
+        val p = app?.let { prefs(it) } ?: return
+        p.edit().apply { if (number == null) remove(KEY_PARK + aor) else putString(KEY_PARK + aor, number) }.apply()
     }
 
     fun setPlusRule(aor: String, key: String?, prefix: String?) {

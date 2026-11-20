@@ -215,6 +215,17 @@
                 android:inputType="phone"
                 android:importantForAutofill="no" />
 
+            <TextView style="@style/BcText.Label" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:text="@string/bc_field_park" />
+            <EditText
+                android:id="@+id/bc_setup_park"
+                style="@style/BcField"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/bc_field_park_hint"
+                android:inputType="phone"
+                android:importantForAutofill="no" />
+
             <TextView
                 android:id="@+id/bc_setup_save"
                 style="@style/BcButton.Call"
