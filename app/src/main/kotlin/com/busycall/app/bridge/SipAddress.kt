@@ -57,4 +57,32 @@ object SipAddress {
             ?.let { Transport.fromParam(it) }
         return Parts(user, host, port, transport)
     }
+
+    /**
+     * Gives a call address on the number's own server the port and transport the number signs
+     * in with. Upstream builds `sip:*97@host` from the host alone (Utils.uriComplete/telToSip),
+     * so a number on `host:5061;transport=tls` (Grandstream RemoteConnect) sent its calls to
+     * UDP 5060, where nothing answered: "Calling…" forever, and the UCM never saw the call.
+     * Addresses on other servers, or that already name a port or transport, are left alone.
+     */
+    fun withAccountRoute(uri: String, accountAor: String): String {
+        if (!uri.startsWith("sip:", ignoreCase = true)) return uri
+        val account = parse(accountAor)
+        if (account.port == null && (account.transport == null || account.transport == Transport.UDP)) return uri
+        val rest = uri.substring(4)
+        val userHost = rest.substringBefore(';')
+        val params = rest.substringAfter(';', "")
+        if ('@' !in userHost) return uri
+        val user = userHost.substringBeforeLast('@')
+        val hostPort = userHost.substringAfterLast('@')
+        if (hostPort.startsWith("[") || ':' in hostPort) return uri // already has a port (or IPv6)
+        if (!hostPort.equals(account.host, ignoreCase = true)) return uri
+        val port = account.port?.let { ":$it" } ?: ""
+        val hasTransport = params.split(';').any { it.startsWith("transport=", ignoreCase = true) }
+        val transport = if (!hasTransport && account.transport != null && account.transport != Transport.UDP) {
+            "transport=${account.transport.param}"
+        } else ""
+        val allParams = listOf(params, transport).filter { it.isNotEmpty() }.joinToString(";")
+        return "sip:$user@$hostPort$port" + if (allParams.isEmpty()) "" else ";$allParams"
+    }
 }

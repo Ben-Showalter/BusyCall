@@ -360,7 +360,9 @@ object BaresipBridge : Bridge {
         val text = plusRuleOf(ua.account.aor).apply(dial.trim())
         // Same number-to-address rules as upstream's dialer (MainScreen.makeCall), SIP accounts only.
         val peerUri = if (Utils.isTelNumber(text)) "tel:$text" else text
-        val uri = if (Utils.isTelUri(peerUri)) Utils.telToSip(peerUri, ua.account) else Utils.uriComplete(peerUri, ua.account.aor)
+        val built = if (Utils.isTelUri(peerUri)) Utils.telToSip(peerUri, ua.account) else Utils.uriComplete(peerUri, ua.account.aor)
+        // Same port and transport as the number signs in with (SipAddress.withAccountRoute).
+        val uri = SipAddress.withAccountRoute(built, ua.account.luri.ifEmpty { ua.account.aor })
         if (!Utils.checkUri(uri)) return PlaceResult.Failed(PlaceProblem.InvalidAddress)
         // A phone (SIM) call is in progress and none of ours: upstream refuses too.
         if (Utils.isAudioMode(activity, AudioManager.MODE_IN_CALL) && Call.calls().none { it.ua.uap == ua.uap }) {
