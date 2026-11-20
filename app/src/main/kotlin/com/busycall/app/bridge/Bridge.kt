@@ -92,6 +92,14 @@ data class CallUi(
     val numberId: String = "",
 )
 
+/** How connecting two calls (attended transfer, park) went. */
+enum class ConnectResult {
+    Connected,
+    /** The far end doesn't support SIP Replaces, so the two can't be joined this way. */
+    NoReplaces,
+    Failed,
+}
+
 /** Why a call couldn't be placed; each maps to a plain-language message. */
 enum class PlaceProblem { ServiceNotRunning, NoNumber, InvalidAddress, PhoneBusy, Failed }
 
@@ -194,7 +202,7 @@ interface Bridge {
     fun transfer(callId: Long, dial: String): Boolean
 
     /** Attended transfer / park: connects a held call and the call placed after it. */
-    fun connectCalls(callIdA: Long, callIdB: Long): Boolean
+    fun connectCalls(callIdA: Long, callIdB: Long): ConnectResult
 
     /** The park number of number [numberId] (empty: no Park). */
     fun parkNumber(numberId: String): String

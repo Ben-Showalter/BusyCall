@@ -244,6 +244,8 @@
     <string name="bc_transfer_done">Transferred</string>
     <string name="bc_transfer_failed">The transfer didn\'t go through. The call is still on.</string>
     <string name="bc_park_done">Parked. Dial the slot number from any phone to pick it up.</string>
+    <string name="bc_park_done_blind">Parked. The phone system told the caller the slot number.</string>
+    <string name="bc_transfer_no_replaces">The other side can\'t take a connected transfer. Use Transfer… instead.</string>
     <string name="bc_park_failed">The call couldn\'t be parked. It\'s still on hold.</string>
     <!-- Ring action: place another call (the current one goes on hold). -->
     <string name="bc_call_add">+ Call</string>

@@ -451,12 +451,21 @@ object BaresipBridge : Bridge {
         return call.transfer(uri)
     }
 
-    override fun connectCalls(callIdA: Long, callIdB: Long): Boolean {
-        // The call placed second carries the link (onHoldCall); upstream's executeTransfer holds it
-        // and REFERs the held call to it with Replaces, which connects the two.
+    override fun connectCalls(callIdA: Long, callIdB: Long): ConnectResult {
+        // Exactly as upstream's own attended transfer (MainScreen, the transfer button): the call
+        // placed second carries the link (onHoldCall); check Replaces, hold it, then
+        // executeTransfer REFERs the held call to it with Replaces, which joins the two.
         val calls = listOfNotNull(Call.ofCallp(callIdA), Call.ofCallp(callIdB))
-        val second = calls.firstOrNull { it.onHoldCall != null && it.onHoldCall in calls } ?: return false
-        return second.executeTransfer()
+        val second = calls.firstOrNull { it.onHoldCall != null && it.onHoldCall in calls }
+            ?: return ConnectResult.Failed
+        return try {
+            if (!Api.call_supported(second.callp, Api.REPLACES)) return ConnectResult.NoReplaces
+            second.hold()
+            if (second.executeTransfer()) ConnectResult.Connected else ConnectResult.Failed
+        } catch (e: Exception) {
+            Log.e(TAG, "connectCalls failed: ${e.javaClass.simpleName}")
+            ConnectResult.Failed
+        }
     }
 
     override fun parkNumber(numberId: String): String = Prefs.parkNumber(numberId) ?: DEFAULT_PARK_NUMBER

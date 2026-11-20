@@ -18,6 +18,8 @@ import com.busycall.app.call.InCallViewModel
 import com.busycall.app.call.IncomingViewModel
 import com.busycall.app.call.CallFromDecision
 import com.busycall.app.call.CallMenuItem
+import com.busycall.app.call.ConnectStep
+import com.busycall.app.bridge.ConnectResult
 import com.busycall.app.call.CallFromStep
 import com.busycall.app.call.RingKey
 import com.busycall.app.dialer.DialTarget
@@ -243,8 +245,28 @@ class CallsTest {
         val s = vm.state()
         assertEquals(InCallAction.Connect, vm.actionFor(RingKey.Down, s))
         assertEquals(InCallAction.HangUp, vm.actionFor(RingKey.Center, s))
-        assertTrue(vm.connect())
+        assertEquals(ConnectStep.Transferred, vm.connect())
         assertEquals(listOf(2L to 1L), bridge.connected)
+    }
+
+    @Test fun `joining calls - each outcome, and park without Replaces falls back to a transfer`() {
+        val vm = InCallViewModel(FakeBridge())
+        assertEquals(ConnectStep.Parked, vm.afterConnect(ConnectResult.Connected, parking = true))
+        assertEquals(ConnectStep.Transferred, vm.afterConnect(ConnectResult.Connected, parking = false))
+        assertEquals(ConnectStep.ParkFallback, vm.afterConnect(ConnectResult.NoReplaces, parking = true))
+        assertEquals(ConnectStep.NoReplaces, vm.afterConnect(ConnectResult.NoReplaces, parking = false))
+        assertEquals(ConnectStep.Failed, vm.afterConnect(ConnectResult.Failed, parking = true))
+
+        val bridge = FakeBridge()
+        bridge.calls.add(callOn(1, CallState.OnHold, "sip:5550198@pbx"))
+        bridge.calls.add(callOn(2, CallState.Connected, "sip:700@pbx"))
+        bridge.connectResult = ConnectResult.NoReplaces
+        val parking = InCallViewModel(bridge)
+        assertEquals(ConnectStep.ParkFallback, parking.connect())
+        val hungUp = mutableListOf<Long>()
+        assertTrue(parking.parkByTransfer { hungUp.add(it) })
+        assertEquals(listOf(2L), hungUp) // the call to 700 is dropped
+        assertEquals(listOf(1L to "700"), bridge.transfers) // the caller is sent to the park number
     }
 
     @Test fun `calling the park number turns OK into Park`() {

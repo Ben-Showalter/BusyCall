@@ -72,7 +72,10 @@ class FakeBridge(
     var transferWorks = true
     var parkNumbers = mutableMapOf<String, String>()
     override fun transfer(callId: Long, dial: String): Boolean { transfers.add(callId to dial); return transferWorks }
-    override fun connectCalls(callIdA: Long, callIdB: Long): Boolean { connected.add(callIdA to callIdB); return transferWorks }
+    var connectResult = com.busycall.app.bridge.ConnectResult.Connected
+    override fun connectCalls(callIdA: Long, callIdB: Long): com.busycall.app.bridge.ConnectResult {
+        connected.add(callIdA to callIdB); return connectResult
+    }
     override fun parkNumber(numberId: String): String = parkNumbers[numberId] ?: com.busycall.app.bridge.DEFAULT_PARK_NUMBER
     override fun answer(activity: Activity, callId: Long) { answered.add(callId) }
     override fun decline(activity: Activity, callId: Long) { declined.add(callId) }

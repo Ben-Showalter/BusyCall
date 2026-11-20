@@ -48,6 +48,14 @@ data class InCallState(
     val parkNumber: String = "",
 )
 
+/** What happens after trying to join two calls (attended transfer or park). */
+enum class ConnectStep {
+    Parked, Transferred,
+    /** The far end can't join calls (no Replaces): park by sending the held caller to the park number instead. */
+    ParkFallback,
+    NoReplaces, Failed,
+}
+
 /** The ▼ menu with one call (owner, 2026-11-20). */
 enum class CallMenuItem { AddCall, Transfer, Park }
 
@@ -156,12 +164,32 @@ class InCallViewModel(private val bridge: Bridge = Bridges.current) {
         if (state.parkNumber.isNotEmpty()) add(CallMenuItem.Park)
     }
 
-    /** Connects the two calls (attended transfer or park). */
-    fun connect(): Boolean {
+    /** Joins the two calls (attended transfer or park) the way upstream does. */
+    fun connect(): ConnectStep {
         val state = state()
-        val call = state.call ?: return false
-        val other = state.other ?: return false
-        return bridge.connectCalls(call.id, other.id)
+        val call = state.call ?: return ConnectStep.Failed
+        val other = state.other ?: return ConnectStep.Failed
+        return afterConnect(bridge.connectCalls(call.id, other.id), state.parking)
+    }
+
+    /** Pure, unit-tested. */
+    fun afterConnect(result: com.busycall.app.bridge.ConnectResult, parking: Boolean): ConnectStep = when (result) {
+        com.busycall.app.bridge.ConnectResult.Connected -> if (parking) ConnectStep.Parked else ConnectStep.Transferred
+        com.busycall.app.bridge.ConnectResult.NoReplaces -> if (parking) ConnectStep.ParkFallback else ConnectStep.NoReplaces
+        com.busycall.app.bridge.ConnectResult.Failed -> ConnectStep.Failed
+    }
+
+    /**
+     * Park when calls can't be joined: drop the call to the park number, and send the held
+     * caller there (blind transfer). Returns true if the transfer went out.
+     */
+    fun parkByTransfer(hangup: (Long) -> Unit): Boolean {
+        val state = state()
+        val parkCall = state.call ?: return false
+        val held = state.other ?: return false
+        if (state.parkNumber.isEmpty()) return false
+        hangup(parkCall.id)
+        return bridge.transfer(held.id, state.parkNumber)
     }
 
     /** After placing a second call: show the newest one. */

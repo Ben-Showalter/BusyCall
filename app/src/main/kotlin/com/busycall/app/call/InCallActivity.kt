@@ -150,14 +150,15 @@ class InCallActivity : FlipBaseActivity() {
             InCallAction.Resume -> viewModel.resume()
             InCallAction.Swap -> viewModel.swap()
             InCallAction.CallMenu -> showCallMenu()
-            InCallAction.Connect -> {
-                // Attended transfer: the two are connected and this phone drops off.
-                Toast.makeText(this, if (viewModel.connect()) R.string.bc_transfer_done else R.string.bc_transfer_failed,
-                    Toast.LENGTH_LONG).show()
-            }
-            InCallAction.ParkDone -> {
-                Toast.makeText(this, if (viewModel.connect()) R.string.bc_park_done else R.string.bc_park_failed,
-                    Toast.LENGTH_LONG).show()
+            // Attended transfer or park: join the two calls; this phone drops off.
+            InCallAction.Connect, InCallAction.ParkDone -> when (viewModel.connect()) {
+                ConnectStep.Parked -> done(R.string.bc_park_done)
+                ConnectStep.Transferred -> done(R.string.bc_transfer_done)
+                ConnectStep.ParkFallback ->
+                    if (viewModel.parkByTransfer { Bridges.current.hangup(this, it) }) done(R.string.bc_park_done_blind)
+                    else toast(R.string.bc_park_failed)
+                ConnectStep.NoReplaces -> toast(R.string.bc_transfer_no_replaces)
+                ConnectStep.Failed -> toast(R.string.bc_transfer_failed)
             }
             InCallAction.HangUp -> {
                 viewModel.callId?.let { Bridges.current.hangup(this, it) }
@@ -168,6 +169,19 @@ class InCallActivity : FlipBaseActivity() {
         }
         lastState = null
         refresh()
+    }
+
+    private fun toast(text: Int) = Toast.makeText(this, text, Toast.LENGTH_LONG).show()
+
+    /**
+     * Parked or transferred: this phone is off the call. Land on BusyCall's Home, not the
+     * phone's home (In call can be the only BusyCall screen in its task).
+     */
+    private fun done(text: Int) {
+        toast(text)
+        startActivity(Intent(this, com.busycall.app.home.HomeActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+        finish()
     }
 
     /** ▼ with one call (owner, 2026-11-20): Add a call · Transfer… · Park. */
