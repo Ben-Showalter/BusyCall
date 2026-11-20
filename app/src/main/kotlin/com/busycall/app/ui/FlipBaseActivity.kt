@@ -16,6 +16,8 @@ import com.busycall.app.bridge.CallState
 import com.busycall.app.call.CallRouter
 import com.busycall.app.call.CallText
 import com.busycall.app.call.InCallActivity
+import com.busycall.app.call.OpenTarget
+import com.busycall.app.call.CallScreenRules
 import com.busycall.app.call.IncomingCallActivity
 import com.busycall.app.data.Prefs
 import com.busycall.app.keys.KeyRouter
@@ -93,6 +95,19 @@ abstract class FlipBaseActivity : Activity() {
      */
     protected open fun softkeyOverride(): Pair<String, () -> Unit>? = null
 
+    /** True on the call screens (In call, Incoming): opening the app shows them as they are. */
+    protected open val isCallScreen: Boolean = false
+
+    /**
+     * The user left this screen with their own key, not BusyCall opening something: on a keypad
+     * phone that's END (it arrives as HOME on Kyocera). Call screens hang up / decline here.
+     */
+    protected open fun onLeftByKey() {}
+
+    // Set when this screen opens another one itself (+ Call, the Home softkey, a picker), so
+    // onUserLeaveHint knows it wasn't the user's END/HOME.
+    private var openingOnPurpose = false
+
     // Keys whose DOWN this window saw and consumed, by keycode.
     private val pressed = HashSet<Int>()
 
@@ -123,8 +138,39 @@ abstract class FlipBaseActivity : Activity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        // BusyCall coming to the front (count 0 -> 1) during a call: show the call (owner, 2026-11-20).
+        if (startedScreens++ == 0) {
+            when (CallScreenRules.onAppOpened(Bridges.current.calls(), isCallScreen)) {
+                OpenTarget.InCall -> startActivity(Intent(this, InCallActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP))
+                OpenTarget.Incoming -> startActivity(Intent(this, IncomingCallActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP))
+                OpenTarget.Stay -> {}
+            }
+        }
+    }
+
+    override fun onStop() {
+        startedScreens = (startedScreens - 1).coerceAtLeast(0)
+        super.onStop()
+    }
+
+    /** Every launch from this screen goes through here (startActivity included). */
+    override fun startActivityForResult(intent: Intent, requestCode: Int, options: Bundle?) {
+        openingOnPurpose = true
+        super.startActivityForResult(intent, requestCode, options)
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (CallScreenRules.leavingEnds(SystemBars.isKeypadPhone(this), openingOnPurpose)) onLeftByKey()
+    }
+
     override fun onResume() {
         super.onResume()
+        openingOnPurpose = false
         SystemBars.hideNavigation(this)
         placeOptionsLabel()
         if (findViewById<View>(R.id.bc_oncall) != null) {
@@ -307,6 +353,9 @@ abstract class FlipBaseActivity : Activity() {
     }
 
     companion object {
+        /** BusyCall screens between onStart and onStop (0 = BusyCall isn't in front). */
+        private var startedScreens = 0
+
         /** How long OK/CALL must be held to call from the ★ number (guide §1: our own timer). */
         const val CALL_HOLD_MS = 700L
     }

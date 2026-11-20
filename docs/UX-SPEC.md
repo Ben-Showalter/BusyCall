@@ -31,9 +31,13 @@ Home **is** the call log (owner, 2026-11-20); there is no separate Call log scre
   CALL, or holding OK, calls back** from the number the call was on (no picker).
 - **Options:** Contacts · Blocked calls · Numbers · Classic screens (temporary) · Settings.
 - **At first start, one at a time:** the microphone, then contacts (Android's prompt, asked once
-  ever; refused: a toast with the Settings path), then **END key and staying ready** (a card
-  "Let the END key end calls, and keep BusyCall ready without a notification?" · Open settings →
-  Android's Accessibility settings with "Choose Call END key, then switch it on"). Asked once.
+  ever; refused: a toast with the Settings path), then **Stay ready for calls** (a card "Keep
+  BusyCall ready for calls without a notification?" · Open settings → Android's Accessibility
+  settings with "Choose Call END key, then switch it on"). Asked once.
+- **During a call**, opening BusyCall (launcher, recent apps, the flip, a notification) shows the
+  In call screen (Incoming while ringing), not the last screen. Every new outgoing call opens In
+  call, however it was started (e.g. holding 1 for voicemail). The voicemail call reads
+  **Voicemail**.
 - Android's "show call log" (other apps, the stock launcher) opens Home.
 
 ## S7 Numbers (`numbers/NumbersActivity`)
@@ -106,10 +110,11 @@ Home **is** the call log (owner, 2026-11-20); there is no separate Call log scre
 - While on: Call from… lists **Phone (SIM)** ("Mobile network" / "No mobile service") as a real
   number; SIM calls ring on S4 and run on S5 (no Call options on ▼); the phone's own dial requests
   (home-screen digits, `tel:` links) open S2 with the number, and the call-log view opens S1.
-- **END key and staying ready:** "On: END ends calls; no notification" / "Off: END only goes home
-  during a call". OK opens Android's Accessibility settings (off: after the card explaining it).
-  While on, END declines a ringing call, hangs up on the In call screen, and brings the In call
-  screen back from any other app; BusyCall shows no status notification.
+- **Stay ready (no notification):** "On: no notification needed" / "Off: END hangs up only on the
+  call screen". OK opens Android's Accessibility settings (off: after the card explaining it).
+  While on, BusyCall shows no status notification, and END works on phones that send ENDCALL.
+- **END key seen** (only while that's on): what the phone sent for END, e.g. "HOME (3), scan 102",
+  or "Press END once, then come back".
 - Options key: Right/Left softkey (OK toggles). About: baresip-studio and license notice.
 
 ## S2 Dialer (`dialer/DialerActivity`)
@@ -191,7 +196,8 @@ Home **is** the call log (owner, 2026-11-20); there is no separate Call log scre
   caller holds, BusyCall calls the park number, the phone system announces the slot, OK =
   **Park** leaves the caller there). **▼ with two calls** = **Transfer**: connects them, you drop off.
   0–9 `*` `#` send keypad tones the moment they're pressed (once connected). END = hang up, then
-  the system's own END action. Outer END / headset = hang up. Outer Speaker = speaker. BACK
+  the system's own END action (on Kyocera END arrives as HOME: leaving this screen by key hangs
+  up; the Home softkey, + Call and Transfer don't). Outer END / headset = hang up. Outer Speaker = speaker. BACK
   leaves the screen; the call goes on (the On-call bar shows elsewhere).
 - The on-screen End stays in the app: back to the other call if there is one, else the screen
   before. Every petal is also tappable.

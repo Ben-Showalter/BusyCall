@@ -159,13 +159,20 @@ The full key table is `PLAN.md §3.1`. In code:
 - **END:** if a call is ringing or active, decline/hang up on DOWN, then
   `return super.dispatchKeyEvent(event)` for both DOWN and UP. Never consume
   END. Outside a call, don't look at END.
-- **END with our calls goes through `keys/EndKeyService`** (owner, 2026-11-20). Upstream's
-  calls are Telecom self-managed, so Android doesn't count them as "in call" and handles END
-  itself (Home): the app never sees it. The accessibility service does: ringing → decline; on
-  the In call screen → hang up; anywhere else during a call → the In call screen comes back
-  after Android's Home (the one time BusyCall reopens after END). Decisions in the pure
-  `EndKeyDecision`. It never consumes the key. While it runs, upstream's status notification is
-  off (`Bridge.setKeptAlive`, UPSTREAM.md); turning it off brings the notification back.
+- **On Kyocera, END arrives as HOME** (found by the Pure Speech HMDM dialer; upstream's calls
+  are Telecom self-managed, so Android never treats END as "end call"). The call screens hang
+  up / decline in **`onUserLeaveHint`** (`FlipBaseActivity.onLeftByKey`), only on keypad phones
+  and only when BusyCall didn't open something itself (`startActivityForResult` marks those:
+  the Home softkey, + Call, Transfer). Rule in `CallScreenRules.leavingEnds`.
+- **END in other apps is left alone** (owner, 2026-11-20). `keys/EndKeyService` (accessibility)
+  only acts on a real `KEYCODE_ENDCALL` (ringing → decline, call screen → hang up), shows the
+  last END/HOME it saw in Settings, and keeps BusyCall alive: while it runs, upstream's status
+  notification is off (`Bridge.setKeptAlive`, UPSTREAM.md).
+- **Opening BusyCall during a call shows the call** (owner, 2026-11-20): when BusyCall comes to
+  the front (`FlipBaseActivity` start count 0 → 1), In call (or Incoming while ringing) opens
+  unless it's already the screen (`CallScreenRules.onAppOpened`). Moving between BusyCall's
+  own screens never jumps. **Every new outgoing call opens In call**, however it started
+  (`CallRouter.onOutgoingCall`, an upstream hook, UPSTREAM.md).
 - **On-screen keypad:** only on phones with no hardware number keys (§3). On a
   keypad phone the Dialer never draws it.
 - **Outer END / outer Speaker** (scan codes in the guide's `docs/keys.md`): act
@@ -269,6 +276,9 @@ alpha-only animation.
 
 BusyCall additions:
 
+- **Text is larger than the guide's minimums** (owner, 2026-11-20): body 18 sp, labels 16 sp,
+  metadata 14 sp, headers 20 sp (`bc_dimens.xml`); ring labels 12 sp so they fit.
+
 - **Black with gray accents** (owner, 2026-11-20). Background `#000000`; title and
   softkey bars `#121214` with a 1 dp `#3A3A3E` divider; focus = 2 dp ring `#BDBDBD`
   over a `#2A2A2E` tint (the guide's `list_row_selector`, recolored); accent text
@@ -327,8 +337,9 @@ Test on a 240×320 mdpi emulator with touch off, then on the real phone (guide c
   ring's red centre).
 - **Putting on-screen actions in Options**, or bringing back an Options menu in a call.
 - **Consuming END** or bringing the app back after it. Hang up, then let the
-  system do what END does (usually Home). The one exception: END in another app during a call
-  brings the call screen back (`keys/EndKeyService`, owner's decision).
+  system do what END does (usually Home).
+- **Waiting for `KEYCODE_ENDCALL` on Kyocera.** It arrives as HOME: hang up in
+  `onUserLeaveHint` (call screens only, never after BusyCall's own launches).
 - **Leaving the app after the on-screen End button.** Only the END key leaves;
   the button returns to the previous screen (or to the other call, with two).
 - **Hanging up on BACK.**

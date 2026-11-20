@@ -21,6 +21,9 @@ object PeerName {
         return user.replace("%2B", "+").replace("%2b", "+").filter { it !in " -(). " }
     }
 
+    /** The phone's voicemail call: Android dials it as a `voicemail:` URI. */
+    fun isVoicemail(uri: String): Boolean = uri.trim().startsWith("voicemail:", ignoreCase = true)
+
     /** The caller's phone number (`+13782343189`, `3782343189`), or null if the address isn't one. */
     fun phoneNumber(uri: String): String? = userPart(uri).takeIf { phoneLike.matches(it) }
 

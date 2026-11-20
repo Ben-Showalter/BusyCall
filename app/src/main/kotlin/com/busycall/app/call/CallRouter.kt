@@ -10,6 +10,7 @@ import com.busycall.app.bridge.Bridges
 import com.busycall.app.bridge.CallState
 import com.busycall.app.dialer.DialerActivity
 import com.busycall.app.home.HomeActivity
+import com.busycall.app.ui.CallScreens
 
 /**
  * Sends upstream's call events to BusyCall's screens.
@@ -103,6 +104,30 @@ object CallRouter {
             // The notification is still there; nothing else to do.
         }
     }
+
+    /**
+     * A new outgoing call (one hook line in upstream's `"call outgoing"` event and in
+     * `handleExternalCall`, UPSTREAM.md): every new call opens its call screen (owner,
+     * 2026-11-20), however it started (the phone's voicemail key, another app). Nothing to do
+     * when the call screen is already in front (BusyCall placed it itself).
+     */
+    @JvmStatic
+    fun onOutgoingCall(context: Context, callp: Long) {
+        if (!shouldShowOutgoing(CallScreens.inCallInFront, Build.VERSION.SDK_INT >= 29 && !Settings.canDrawOverlays(context))) return
+        // CLEAR_TOP: reuse the call screen BusyCall may have just opened itself, never a second one.
+        val intent = Intent(context, InCallActivity::class.java)
+            .putExtra(EXTRA_CALL_ID, callp)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        try {
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            // The call notification still leads there.
+        }
+    }
+
+    /** Pure: open the call screen unless it's in front, or Android won't let a service open it. */
+    fun shouldShowOutgoing(callScreenInFront: Boolean, blockedFromBackground: Boolean): Boolean =
+        !callScreenInFront && !blockedFromBackground
 
     /** What a dial request asks for: `tel:` → the number, `sip:` → the address. */
     private fun dialNumber(intent: Intent): String? {

@@ -10,6 +10,7 @@ import com.busycall.app.bridge.Bridges
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.busycall.app.data.Prefs
+import com.busycall.app.keys.EndKeyService
 import com.busycall.app.ui.EndKeySetup
 import com.busycall.app.ui.FlipBaseActivity
 import com.busycall.app.ui.Menus
@@ -35,7 +36,7 @@ class SettingsActivity : FlipBaseActivity() {
         list.getChildAt(0)?.let { first -> first.post { if (currentFocus == null) first.requestFocus() } }
     }
 
-    private enum class Item { PhoneDialer, EndKey, OptionsSide, About }
+    private enum class Item { PhoneDialer, EndKey, EndKeySeen, OptionsSide, About }
 
     override fun onResume() {
         super.onResume()
@@ -83,7 +84,10 @@ class SettingsActivity : FlipBaseActivity() {
 
     private fun render() {
         // Only phones with a SIM can use BusyCall for phone calls.
-        val items = Item.values().filter { it != Item.PhoneDialer || packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY) }
+        val items = Item.values().filter {
+            (it != Item.PhoneDialer || packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) &&
+                (it != Item.EndKeySeen || EndKeySetup.isOn(this))
+        }
         Rows.fill(list, items) { row, title, subtitle, _, item ->
             when (item) {
                 Item.PhoneDialer -> {
@@ -100,6 +104,15 @@ class SettingsActivity : FlipBaseActivity() {
                     Rows.tone(subtitle, RowTone.Muted)
                     // On or off, both happen in Android's Accessibility settings.
                     row.setOnClickListener { if (on) EndKeySetup.open(this) else EndKeySetup.offer(this) }
+                }
+                Item.EndKeySeen -> {
+                    // What this phone sends for END (SPIKES S8): HOME on Kyocera, ENDCALL elsewhere.
+                    val seen = EndKeyService.lastKey
+                    Rows.setText(title, getString(R.string.bc_settings_end_seen))
+                    Rows.setText(subtitle, seen?.let { getString(R.string.bc_settings_end_seen_value, it.name, it.keyCode, it.scanCode) }
+                        ?: getString(R.string.bc_settings_end_seen_none))
+                    Rows.tone(subtitle, RowTone.Muted)
+                    row.setOnClickListener { render() }
                 }
                 Item.OptionsSide -> {
                     Rows.setText(title, getString(R.string.bc_settings_options_side))

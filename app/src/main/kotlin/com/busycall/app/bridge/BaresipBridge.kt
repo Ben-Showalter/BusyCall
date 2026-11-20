@@ -182,7 +182,7 @@ object BaresipBridge : Bridge {
         return history.asReversed().take(limit).map { h ->
             val ua = UserAgent.ofAor(h.aor)
             // A phone number: its contact or the formatted number (PeerName); else upstream's own rule.
-            val name = PeerName.of(h.peerUri, contactIndex())
+            val name = voicemailName(h.peerUri) ?: PeerName.of(h.peerUri, contactIndex())
                 ?: if (ua != null) Utils.friendlyUri(h.peerUri, ua.account) else Utils.uriUserPart(h.peerUri)
             val incoming = h.direction == "in"
             RecentUi(
@@ -397,7 +397,7 @@ object BaresipBridge : Bridge {
         val label = acc.nickName.ifEmpty { parts.user }
         CallUi(
             id = c.callp,
-            peerName = PeerName.of(c.peerUri, contactIndex()) ?: Utils.friendlyUri(c.peerUri, acc),
+            peerName = voicemailName(c.peerUri) ?: PeerName.of(c.peerUri, contactIndex()) ?: Utils.friendlyUri(c.peerUri, acc),
             peerUri = c.peerUri,
             numberLabel = when {
                 acc.isMobile -> simLabel()
@@ -554,6 +554,17 @@ object BaresipBridge : Bridge {
      * shows on BusyCall's call screens. Numbers are dialed as typed (no + rule).
      */
     private fun placeSimCall(activity: Activity, dial: String): PlaceResult {
+        // Calling voicemail back: Android dials the SIM's voicemail number itself.
+        if (PeerName.isVoicemail(dial)) {
+            return try {
+                val tm = activity.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
+                tm.placeCall(Uri.fromParts("voicemail", "", null), Bundle())
+                PlaceResult.Placed
+            } catch (e: SecurityException) {
+                Log.e(TAG, "Voicemail placeCall failed: ${e.javaClass.simpleName}")
+                PlaceResult.Failed(PlaceProblem.Failed)
+            }
+        }
         val number = dial.trim().removePrefix("tel:").substringBefore('@').removePrefix("sip:")
         if (!Utils.isTelNumber(number)) return PlaceResult.Failed(PlaceProblem.InvalidAddress)
         return try {
@@ -663,6 +674,10 @@ object BaresipBridge : Bridge {
         val mobile = BaresipService.uas.value.firstOrNull { it.account.isMobile } ?: return null
         return SimUi(id = mobile.account.aor, ready = mobile.status in BaresipService.circleGreen.values)
     }
+
+    /** "Voicemail" for the phone's voicemail call (`voicemail:`), which otherwise shows as "voicemail:". */
+    private fun voicemailName(peerUri: String): String? =
+        if (PeerName.isVoicemail(peerUri)) BaresipService.instance?.getString(com.tutpro.baresip.R.string.bc_voicemail) ?: "Voicemail" else null
 
     /** "Phone (SIM)", from BusyCall's strings. */
     private fun simLabel(): String =

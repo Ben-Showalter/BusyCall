@@ -355,6 +355,8 @@
     <string name="bc_sim_blocking_line">SIM calls use BusyCall · Block: %1$s</string>
 
     <string name="bc_calllog_call_back">Call back</string>
+    <!-- The name of the phone's voicemail call in the call log and on the call screen. -->
+    <string name="bc_voicemail">Voicemail</string>
     <!-- Call details (OK on a Home row). -->
     <string name="bc_details_title">Call details</string>
     <string name="bc_details_footer">CALL calls back</string>
@@ -422,14 +424,19 @@
 
     <!-- END key service (keys/EndKeyService): an accessibility service. Shown in Android's Accessibility list. -->
     <string name="bc_end_service_label">Call END key</string>
-    <string name="bc_end_service_description">Lets the END key hang up and decline calls, and brings the call screen back from other apps during a call. It also keeps the app ready for calls without a notification. It reads only the END key, nothing on screen.</string>
-    <string name="bc_end_setup_title">END key and staying ready</string>
+    <string name="bc_end_service_description">Keeps the app ready for calls without a notification, and lets END hang up and decline calls on phones that send it to apps. It reads only the END and Home keys, nothing on screen.</string>
+    <string name="bc_end_setup_title">Stay ready for calls</string>
     <!-- %1$s = the app name. -->
-    <string name="bc_end_setup_message">Let the END key end calls, and keep %1$s ready for calls without a notification? Android asks you to switch this on yourself.</string>
+    <string name="bc_end_setup_message">Keep %1$s ready for calls without a notification? Android asks you to switch this on yourself.</string>
     <string name="bc_end_setup_open">Open settings</string>
     <!-- The D-pad path in Android's Accessibility settings. -->
     <string name="bc_end_setup_path">Choose Call END key, then switch it on.</string>
-    <string name="bc_settings_end_key">END key and staying ready</string>
-    <string name="bc_settings_end_key_on">On: END ends calls; no notification</string>
-    <string name="bc_settings_end_key_off">Off: END only goes home during a call</string>
+    <string name="bc_settings_end_key">Stay ready (no notification)</string>
+    <string name="bc_settings_end_key_on">On: no notification needed</string>
+    <string name="bc_settings_end_key_off">Off: END hangs up only on the call screen</string>
+    <!-- Settings: what the phone sent for END, as the END-key service saw it. -->
+    <string name="bc_settings_end_seen">END key seen</string>
+    <!-- %1$s = "HOME" or "ENDCALL", %2$d = keycode, %3$d = scan code. -->
+    <string name="bc_settings_end_seen_value">%1$s (%2$d), scan %3$d</string>
+    <string name="bc_settings_end_seen_none">Press END once, then come back</string>
 </resources>

@@ -107,7 +107,7 @@
         <item name="android:drawablePadding">1dp</item>
         <item name="android:drawableTint">@color/bc_petal_text</item>
         <item name="android:textColor">@color/bc_petal_text</item>
-        <item name="android:textSize">@dimen/bc_text_meta</item>
+        <item name="android:textSize">@dimen/bc_text_petal</item>
         <item name="android:maxLines">1</item>
         <item name="android:ellipsize">end</item>
         <item name="android:focusable">true</item>

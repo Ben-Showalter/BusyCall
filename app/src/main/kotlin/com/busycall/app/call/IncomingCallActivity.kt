@@ -83,6 +83,13 @@ class IncomingCallActivity : FlipBaseActivity() {
 
     override fun onCallKey() = answer()
 
+    override val isCallScreen = true
+
+    /** END arrives as HOME on Kyocera: decline, as END does (AGENTS §4). */
+    override fun onLeftByKey() {
+        viewModel.callId?.let { Bridges.current.decline(this, it) }
+    }
+
     override fun onEndKeyDown() {
         // Decline first; the base class then lets END reach the system.
         viewModel.callId?.let { Bridges.current.decline(this, it) }

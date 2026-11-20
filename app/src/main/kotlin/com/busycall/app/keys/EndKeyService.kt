@@ -2,30 +2,25 @@ package com.busycall.app.keys
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
-import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Handler
-import android.os.Looper
 import android.provider.Settings
 import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 import com.busycall.app.bridge.Bridges
-import com.busycall.app.call.InCallActivity
 import com.busycall.app.ui.CallScreens
 
+/** One key press the service saw: its name, keycode and scan code. */
+data class KeySeen(val name: String, val keyCode: Int, val scanCode: Int)
+
 /**
- * BusyCall's accessibility service (owner, 2026-11-20): the only hook that sees END with our
- * self-managed calls (guide docs/platform.md). During a call END declines a ringing call, hangs
- * up on the call screen, or brings the call screen back from any other app. It never consumes
- * a key, so Android's own END (Home) still happens. While it runs it also keeps BusyCall alive,
- * so upstream's status notification is dropped (UPSTREAM.md).
+ * BusyCall's accessibility service (owner, 2026-11-20). It keeps BusyCall alive, so upstream's
+ * status notification is dropped (UPSTREAM.md). On a phone that sends `KEYCODE_ENDCALL` it
+ * declines a ringing call and hangs up on the call screen; in other apps END is left alone. On
+ * Kyocera END arrives as HOME, which the call screens handle themselves (onUserLeaveHint). It
+ * remembers the last END/HOME it saw, for Settings. It never consumes a key.
  */
 class EndKeyService : AccessibilityService() {
-
-    private val handler = Handler(Looper.getMainLooper())
-    private var endDown = false
-    private var showOnUp = false
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -41,36 +36,19 @@ class EndKeyService : AccessibilityService() {
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
         // Cheap for every other key: it blocks key delivery to every app (guide §5).
-        if (KeyRouter.route(event.keyCode, event.scanCode) != LogicalKey.End) return false
-        when (event.action) {
-            KeyEvent.ACTION_DOWN -> if (event.repeatCount == 0) {
-                endDown = true
-                showOnUp = false
-                when (val action = EndKeyDecision.decide(Bridges.current.calls(), CallScreens.inCallInFront)) {
-                    is EndAction.Decline -> Bridges.current.decline(this, action.callId)
-                    is EndAction.HangUp -> Bridges.current.hangup(this, action.callId)
-                    EndAction.ShowCall -> showOnUp = true
-                    EndAction.Nothing -> {}
-                }
-            }
-            KeyEvent.ACTION_UP -> {
-                if (endDown && showOnUp) handler.postDelayed(::showCall, SHOW_DELAY_MS)
-                endDown = false
-                showOnUp = false
-            }
+        val key = KeyRouter.route(event.keyCode, event.scanCode)
+        val isHome = event.keyCode == KeyEvent.KEYCODE_HOME
+        if (key != LogicalKey.End && !isHome) return false
+        if (event.action != KeyEvent.ACTION_DOWN || event.repeatCount != 0) return false
+        // What this phone sends for END, for Settings (the E4810 spike, SPIKES S8).
+        lastKey = KeySeen(if (isHome) "HOME" else "ENDCALL", event.keyCode, event.scanCode)
+        if (key != LogicalKey.End) return false // HOME: the call screens handle it (onUserLeaveHint)
+        when (val action = EndKeyDecision.decide(Bridges.current.calls(), CallScreens.inCallInFront)) {
+            is EndAction.Decline -> Bridges.current.decline(this, action.callId)
+            is EndAction.HangUp -> Bridges.current.hangup(this, action.callId)
+            EndAction.Nothing -> {}
         }
         return false // never consume END (AGENTS §4)
-    }
-
-    /** After Android's own Home: the call screen in front again. PendingIntent, not startActivity (guide §5). */
-    private fun showCall() {
-        val intent = Intent(this, InCallActivity::class.java)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        try {
-            PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT).send()
-        } catch (e: PendingIntent.CanceledException) {
-            // The call screen can still be reached from the on-call notification.
-        }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
@@ -88,15 +66,16 @@ class EndKeyService : AccessibilityService() {
     }
 
     private fun stopped() {
-        handler.removeCallbacksAndMessages(null)
         if (!running) return
         running = false
         Bridges.current.setKeptAlive(false)
     }
 
     companion object {
-        /** Long enough for Android's own END (Home) to finish first. */
-        private const val SHOW_DELAY_MS = 300L
+        /** The last END or HOME press the service saw; null until one is pressed. */
+        @Volatile
+        var lastKey: KeySeen? = null
+            private set
 
         @Volatile
         var running = false

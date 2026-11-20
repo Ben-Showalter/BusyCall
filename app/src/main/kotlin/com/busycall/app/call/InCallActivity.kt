@@ -10,6 +10,8 @@ import android.widget.Toast
 import com.busycall.app.bridge.Bridges
 import com.busycall.app.bridge.CallState
 import com.busycall.app.dialer.DialerActivity
+import com.busycall.app.keys.EndAction
+import com.busycall.app.keys.EndKeyDecision
 import com.busycall.app.keys.LogicalKey
 import com.busycall.app.ui.CallScreens
 import com.busycall.app.ui.FlipBaseActivity
@@ -117,6 +119,17 @@ class InCallActivity : FlipBaseActivity() {
     }
 
     override fun softkeyOverride(): Pair<String, () -> Unit> = getString(R.string.bc_softkey_home) to { goToPhoneHome() }
+
+    override val isCallScreen = true
+
+    /** END arrives as HOME on Kyocera (the Pure Speech dialer's finding): hang up what this screen shows. */
+    override fun onLeftByKey() {
+        when (val action = EndKeyDecision.decide(Bridges.current.calls(), callScreenInFront = true)) {
+            is EndAction.HangUp -> Bridges.current.hangup(this, action.callId)
+            is EndAction.Decline -> Bridges.current.decline(this, action.callId)
+            EndAction.Nothing -> {}
+        }
+    }
 
     /** The ring's keys act directly; focus never moves on them. */
     override fun claimsKey(key: LogicalKey): Boolean = when (key) {

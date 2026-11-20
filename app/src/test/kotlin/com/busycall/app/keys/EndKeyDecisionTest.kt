@@ -5,7 +5,7 @@ import com.busycall.app.bridge.CallUi
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** END during a call through the accessibility service (Kyocera E4810: our calls are self-managed). */
+/** END during a call: the call screens (END = HOME on Kyocera) and the accessibility service (ENDCALL). */
 class EndKeyDecisionTest {
 
     private fun call(id: Long, state: CallState, incoming: Boolean = false) =
@@ -29,7 +29,7 @@ class EndKeyDecisionTest {
         assertEquals(EndAction.HangUp(1), EndKeyDecision.decide(listOf(call(1, CallState.OnHold)), callScreenInFront = true))
     }
 
-    @Test fun `anywhere else during a call END brings the call screen back`() {
-        assertEquals(EndAction.ShowCall, EndKeyDecision.decide(listOf(call(1, CallState.Connected)), callScreenInFront = false))
+    @Test fun `in other apps END is left alone (owner, 2026-11-20)`() {
+        assertEquals(EndAction.Nothing, EndKeyDecision.decide(listOf(call(1, CallState.Connected)), callScreenInFront = false))
     }
 }

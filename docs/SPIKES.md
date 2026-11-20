@@ -62,20 +62,19 @@ _Built 2026-11-20, not tested yet._ Settings › Use for phone (SIM) calls. Reco
 5. CALL/END and the stock launcher's digit keys with BusyCall as the dialer.
 6. Switch back to the stock dialer; everything works again.
 
-## S8 — END key service and no status notification (E4810)
-_Built 2026-11-20, not tested yet._ Settings › END key and staying ready › Open settings ›
-Call END key › On. Record:
-1. Does the service see END (`KEYCODE_ENDCALL`) at all? On the In call screen END should hang
-   up. **If it never does:** Android consumes ENDCALL before the accessibility filter on this
-   phone; fall back to hanging up in InCallActivity's `onUserLeaveHint` (END = Home there),
-   ignoring our own Home softkey, and record it in the guide's docs/keys.md.
-2. A call, then another app (Contacts): END → the phone's Home, then the call screen comes back.
-3. A ringing call in another app: END declines.
-4. No call: END does what it always did, and BusyCall doesn't open.
-5. The BusyCall status icon is gone; a call still shows its call notification.
-6. Still registered the next morning, after closing the flip, screen off, and after a reboot
-   (does the service come back by itself?).
-7. Turning the service off brings the status notification back at once.
+## S8 — END key, opening during a call, no status notification (E4810)
+_Built 2026-11-20, not tested yet._ The Pure Speech HMDM dialer found END arrives as HOME on
+Kyocera; BusyCall's call screens now hang up in `onUserLeaveHint`. Record:
+1. Settings › Stay ready › on, press END once, back to Settings: **END key seen** shows what the
+   phone sends (expected "HOME (3)"; note the scan code in the guide's docs/keys.md).
+2. In call screen: END hangs up. The Home softkey, + Call and Transfer leave it without hanging up.
+3. Ringing: END declines.
+4. During a call: go to another app, then open BusyCall from the launcher → In call. Close and
+   open the flip → In call. BACK from In call to Home stays on Home.
+5. Hold 1 on the phone's home screen (voicemail): BusyCall's In call opens; the log says Voicemail.
+6. No status icon while Stay ready is on; a call still shows its call notification. Still
+   registered the next morning, after a reboot (does the service come back by itself?).
+7. Turning Stay ready off brings the status notification back at once.
 
 ## S2 — CALL and END keys
 _Not started._ Record per phone: keycode and scan code for CALL, END, outer END,
