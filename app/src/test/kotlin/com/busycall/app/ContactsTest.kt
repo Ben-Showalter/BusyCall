@@ -5,12 +5,11 @@ import com.busycall.app.bridge.ContactNumberUi
 import com.busycall.app.bridge.ContactUi
 import com.busycall.app.bridge.NumberStatus
 import com.busycall.app.bridge.NumberUi
-import com.busycall.app.bridge.PlaceResult
 import com.busycall.app.bridge.RecentUi
 import com.busycall.app.bridge.Transport
 import com.busycall.app.calllog.CallLogViewModel
 import com.busycall.app.contacts.ContactsViewModel
-import com.busycall.app.dialer.DialOutcome
+import com.busycall.app.dialer.DialTarget
 import com.busycall.app.dialer.DialerViewModel
 import com.busycall.app.dialer.KeypadMatcher
 import com.busycall.app.ui.TimeLabel
@@ -105,23 +104,19 @@ class ContactsTest {
 
     private val office = NumberUi("sip:104@pbx", "Office", "104", "pbx", Transport.TLS, NumberStatus.Registered, 0, false)
 
-    @Test fun `dialer calls a match from the chosen number, or hands it to the SIM dialer`() {
+    @Test fun `dialer calls the focused match, not the typed digits`() {
         val bridge = FakeBridge(numbers = mutableListOf(office))
         bridge.contacts.add(anna)
-        val vm = DialerViewModel(bridge, hasTelephony = true)
-        val matcher = vm.buildMatcher()
-        val match = vm.matchesFor(matcher, "2").first()
-        val placed = mutableListOf<Pair<String, String>>()
-        assertEquals(DialOutcome.Placed, vm.callMatch(match) { from, dial -> placed.add(from to dial); PlaceResult.Placed })
-        assertEquals(office.id to "tel:+15550198", placed.single())
-        vm.nextFrom() // Phone (SIM)
-        assertEquals(DialOutcome.PhoneDialer("+15550198"), vm.callMatch(match) { _, _ -> error("not a SIP call") })
+        val vm = DialerViewModel(bridge)
+        vm.setNumber("2")
+        val match = vm.matchesFor(vm.buildMatcher(), "2").first()
+        assertEquals(DialTarget.Dial("tel:+15550198", "+15550198"), vm.target(match))
     }
 
     @Test fun `dialer without the service matches nothing`() {
         val bridge = FakeBridge(running = false)
         bridge.contacts.add(anna)
-        val vm = DialerViewModel(bridge, hasTelephony = false)
+        val vm = DialerViewModel(bridge)
         assertTrue(vm.matchesFor(vm.buildMatcher(), "2").isEmpty())
         assertTrue(vm.matchesFor(null, "2").isEmpty())
     }

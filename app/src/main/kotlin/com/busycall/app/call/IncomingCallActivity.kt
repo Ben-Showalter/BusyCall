@@ -8,7 +8,6 @@ import android.view.View
 import android.widget.TextView
 import com.busycall.app.keys.LogicalKey
 import com.busycall.app.ui.FlipBaseActivity
-import com.busycall.app.ui.MenuItem
 import com.busycall.app.bridge.Bridges
 import com.tutpro.baresip.R
 
@@ -77,11 +76,8 @@ class IncomingCallActivity : FlipBaseActivity() {
         super.onPause()
     }
 
-    override fun optionsItems(): List<MenuItem> = listOf(
-        MenuItem(getString(R.string.bc_call_silence)) { Bridges.current.silenceRinger() },
-        MenuItem(getString(R.string.bc_call_answer)) { answer() },
-        MenuItem(getString(R.string.bc_call_decline)) { decline() },
-    )
+    /** Answer and Decline are on screen; the softkey goes to the phone's home (owner, 2026-11-20). */
+    override fun softkeyOverride(): Pair<String, () -> Unit> = getString(R.string.bc_softkey_home) to { goToPhoneHome() }
 
     override fun onCallKey() = answer()
 
@@ -126,7 +122,7 @@ class IncomingCallActivity : FlipBaseActivity() {
         }
         to.text = getString(R.string.bc_call_to, call.numberLabel)
         name.text = call.peerName
-        val shownNumber = com.busycall.app.bridge.SipAddress.parse(call.peerUri).user
+        val shownNumber = CallText.number(call.peerUri)
         number.text = if (shownNumber == call.peerName) "" else shownNumber
         number.visibility = if (number.text.isEmpty()) View.GONE else View.VISIBLE
     }

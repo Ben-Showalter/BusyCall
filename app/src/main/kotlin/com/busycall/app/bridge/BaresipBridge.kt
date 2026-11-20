@@ -152,8 +152,9 @@ object BaresipBridge : Bridge {
         val history = synchronized(BaresipService.callHistory) { BaresipService.callHistory.toList() }
         return history.asReversed().take(limit).map { h ->
             val ua = UserAgent.ofAor(h.aor)
-            // friendlyUri: contact name if known, else the number (upstream's own display rule).
-            val name = if (ua != null) Utils.friendlyUri(h.peerUri, ua.account) else Utils.uriUserPart(h.peerUri)
+            // A phone number: its contact or the formatted number (PeerName); else upstream's own rule.
+            val name = PeerName.of(h.peerUri, contactIndex())
+                ?: if (ua != null) Utils.friendlyUri(h.peerUri, ua.account) else Utils.uriUserPart(h.peerUri)
             val incoming = h.direction == "in"
             RecentUi(
                 peerName = name,
@@ -332,7 +333,7 @@ object BaresipBridge : Bridge {
         val label = acc.nickName.ifEmpty { parts.user }
         CallUi(
             id = c.callp,
-            peerName = Utils.friendlyUri(c.peerUri, acc),
+            peerName = PeerName.of(c.peerUri, contactIndex()) ?: Utils.friendlyUri(c.peerUri, acc),
             peerUri = c.peerUri,
             numberLabel = if (label == parts.user) parts.user else "$label · ${parts.user}",
             incoming = c.dir == "in",
@@ -426,6 +427,19 @@ object BaresipBridge : Bridge {
     }
 
     // ---- Contacts and call log ----
+
+    // Contact names by phone-number digits (PeerName), rebuilt when upstream replaces its list.
+    @Volatile private var indexedContacts: Any? = null
+    @Volatile private var contactIndexCache: Map<String, String> = emptyMap()
+
+    private fun contactIndex(): Map<String, String> {
+        val current = BaresipService.contacts
+        if (current !== indexedContacts) {
+            contactIndexCache = PeerName.index(contacts())
+            indexedContacts = current
+        }
+        return contactIndexCache
+    }
 
     private val contactsPermissions = arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS)
 

@@ -1,9 +1,5 @@
 package com.busycall.app.dialer
 
-import android.content.ActivityNotFoundException
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -13,25 +9,23 @@ import android.text.style.UnderlineSpan
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
-import com.busycall.app.bridge.Bridges
-import com.busycall.app.bridge.PlaceProblem
-import com.busycall.app.call.InCallActivity
+import com.busycall.app.call.Calling
 import com.busycall.app.keys.HoldTimer
 import com.busycall.app.keys.LogicalKey
 import com.busycall.app.ui.FlipBaseActivity
 import com.busycall.app.ui.MenuItem
-import com.busycall.app.ui.Menus
 import com.busycall.app.ui.Rows
 import com.tutpro.baresip.R
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 /**
- * Dialer (PLAN.md S2, basic). Digits type the number; hold 0 for `+`; Clear (BACK) deletes one
- * digit, and leaves when the number is empty. ◀ ▶ on "Call from" pick the number to call from,
- * including Phone (SIM). CALL or the Call button places the call; with an empty number CALL
- * fills in the last number called.
+ * Dialer (PLAN.md S2). Digits type the number; hold 0 for `+`; Clear (BACK) deletes one digit,
+ * and leaves when the number is empty.
+ *
+ * Calling (owner, 2026-11-20): a short press of OK or CALL opens **Call from…**; holding OK or
+ * CALL calls from the ★ number at once (call/CallFrom). With an empty number, OK/CALL fills in
+ * the last number called.
  *
  * Under the number, up to 3 contacts whose number contains the digits or whose name the keys
  * spell (PLAN §3.3), the matched part underlined. ▼ moves into them; OK or CALL on one calls it.
@@ -39,7 +33,7 @@ import java.util.concurrent.Executors
  */
 class DialerActivity : FlipBaseActivity() {
 
-    private lateinit var viewModel: DialerViewModel
+    private val viewModel = DialerViewModel()
     private val holdTimer = HoldTimer()
     private val handler = Handler(Looper.getMainLooper())
     private val holdFired = Runnable {
@@ -47,8 +41,6 @@ class DialerActivity : FlipBaseActivity() {
     }
 
     private lateinit var number: TextView
-    private lateinit var from: View
-    private lateinit var fromValue: TextView
     private lateinit var error: TextView
     private lateinit var matchList: LinearLayout
 
@@ -56,24 +48,22 @@ class DialerActivity : FlipBaseActivity() {
     @Volatile private var matcher: KeypadMatcher? = null
     private var shownFor: String? = null
 
-    override val handlesCallKey = true
+    override val usesCallHold = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.bc_activity_dialer)
-        findViewById<TextView>(R.id.bc_title).setText(R.string.bc_dialer_title)
+        findViewById<TextView>(R.id.bc_title).setText(
+            if (intent.getBooleanExtra(EXTRA_ADD_CALL, false)) R.string.bc_dialer_add_title else R.string.bc_dialer_title,
+        )
         setFooterHint(getString(R.string.bc_dialer_footer))
-        viewModel = DialerViewModel(hasTelephony = packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY))
         number = findViewById(R.id.bc_dialer_number)
-        from = findViewById(R.id.bc_dialer_from)
-        fromValue = findViewById(R.id.bc_dialer_from_value)
         error = findViewById(R.id.bc_dialer_error)
         matchList = findViewById(R.id.bc_dialer_matches)
-        number.setOnClickListener { placeCall() }
-        val call = findViewById<TextView>(R.id.bc_dialer_call)
-        call.paint.isFakeBoldText = true
-        call.setOnClickListener { placeCall() }
-        from.setOnClickListener { chooseFrom() }
+        number.setOnClickListener { call(null, held = false) }
+        val callButton = findViewById<TextView>(R.id.bc_dialer_call)
+        callButton.paint.isFakeBoldText = true
+        callButton.setOnClickListener { call(null, held = false) }
         intent.getStringExtra(EXTRA_NUMBER)?.let { viewModel.setNumber(it) }
         render()
         number.post { if (currentFocus == null) number.requestFocus() }
@@ -90,9 +80,8 @@ class DialerActivity : FlipBaseActivity() {
         super.onDestroy()
     }
 
+    /** Options holds only what isn't on screen (owner, 2026-11-20). */
     override fun optionsItems(): List<MenuItem> = listOf(
-        MenuItem(getString(R.string.bc_dialer_call)) { placeCall() },
-        MenuItem(getString(R.string.bc_dialer_from_menu)) { chooseFrom() },
         MenuItem(getString(R.string.bc_dialer_clear)) { viewModel.setNumber(""); render() },
     )
 
@@ -107,58 +96,27 @@ class DialerActivity : FlipBaseActivity() {
         render()
     }
 
-    override fun onCallKey() {
-        val match = currentFocus?.getTag(R.id.bc_dialer_matches) as? DialMatch
-        if (match != null) callMatch(match) else placeCall()
+    /** OK or CALL: short = Call from…, held = ★. A focused match is called instead of the typed number. */
+    override fun onCallOrOk(held: Boolean, callKey: Boolean): Boolean {
+        call(currentFocus?.getTag(R.id.bc_dialer_matches) as? DialMatch, held)
+        return true
     }
 
     override fun onLogicalKeyUp(key: LogicalKey): Boolean = when (key) {
         // Clear arrives as BACK on Kyocera: delete a digit; leave only when empty (AGENTS §4).
         LogicalKey.Back, LogicalKey.Delete -> if (viewModel.delete()) { render(); true } else false
-        LogicalKey.Left -> if (currentFocus == from) { viewModel.previousFrom(); render(); true } else false
-        LogicalKey.Right -> if (currentFocus == from) { viewModel.nextFrom(); render(); true } else false
         else -> false
     }
 
-    private fun chooseFrom() {
-        val choices = viewModel.fromChoices()
-        if (choices.isEmpty()) return
-        Menus.show(this, getString(R.string.bc_dialer_from_menu), choices.mapIndexed { i, c ->
-            MenuItem(fromLabel(c)) { viewModel.chooseFrom(i); render() }
-        })
-    }
-
-    private fun fromLabel(c: FromChoice): String =
-        if (c.id == null) getString(R.string.bc_sim_title) else getString(R.string.bc_number_title, c.label, c.number)
-
-    private fun placeCall() = handle(viewModel.call { fromId, dial -> Bridges.current.placeCall(this, fromId, dial) })
-
-    private fun callMatch(match: DialMatch) =
-        handle(viewModel.callMatch(match) { fromId, dial -> Bridges.current.placeCall(this, fromId, dial) })
-
-    private fun handle(outcome: DialOutcome) {
-        when (outcome) {
-            DialOutcome.Placed -> {
-                startActivity(Intent(this, InCallActivity::class.java))
-                finish()
-            }
-            is DialOutcome.PhoneDialer -> try {
-                // Phone (SIM): the phone's own dialer, number filled in (PLAN §5.2). On key UP.
-                startActivity(Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", outcome.number, null)))
-            } catch (e: ActivityNotFoundException) {
-                Toast.makeText(this, R.string.bc_sim_no_dialer, Toast.LENGTH_LONG).show()
-            }
-            DialOutcome.Redialed -> render()
-            DialOutcome.NothingToCall -> showError(getString(R.string.bc_dialer_type_number))
-            is DialOutcome.Failed -> showError(getString(
-                when (outcome.problem) {
-                    PlaceProblem.ServiceNotRunning -> R.string.bc_problem_not_running
-                    PlaceProblem.NoNumber -> R.string.bc_dialer_no_numbers
-                    PlaceProblem.InvalidAddress -> R.string.bc_dialer_invalid
-                    PlaceProblem.PhoneBusy -> R.string.bc_dialer_phone_busy
-                    PlaceProblem.Failed -> R.string.bc_dialer_failed
-                }
-            ))
+    private fun call(match: DialMatch?, held: Boolean) {
+        when (val target = viewModel.target(match)) {
+            is DialTarget.Dial -> Calling.start(
+                this, target.dial, target.shown, held,
+                onPlaced = { finish() },
+                onProblem = { showError(it) },
+            )
+            DialTarget.Redialed -> render()
+            DialTarget.NothingToCall -> showError(getString(R.string.bc_dialer_type_number))
         }
     }
 
@@ -168,11 +126,7 @@ class DialerActivity : FlipBaseActivity() {
     }
 
     private fun render() {
-        val state = viewModel.state()
-        number.text = state.number
-        val choice = state.from
-        val label = if (choice == null) getString(R.string.bc_dialer_no_numbers) else fromLabel(choice)
-        fromValue.text = if (state.canChangeFrom) getString(R.string.bc_dialer_from_arrows, label) else label
+        number.text = viewModel.state().number
         updateMatches()
     }
 
@@ -201,7 +155,7 @@ class DialerActivity : FlipBaseActivity() {
             subtitle.text = underline(prefix + m.display, m.numberHighlight?.let { it.first + prefix.length..it.last + prefix.length })
             subtitle.visibility = View.VISIBLE
             row.setTag(R.id.bc_dialer_matches, m)
-            row.setOnClickListener { callMatch(m) }
+            row.setOnClickListener { call(m, held = false) }
         }
         matchList.visibility = if (matches.isEmpty()) View.GONE else View.VISIBLE
         if (hadFocus && !matchList.hasFocus()) number.requestFocus()
@@ -216,5 +170,7 @@ class DialerActivity : FlipBaseActivity() {
 
     companion object {
         const val EXTRA_NUMBER = "com.busycall.app.dial_number"
+        /** Opened from a call's "+ Call": the first call is already on hold. */
+        const val EXTRA_ADD_CALL = "com.busycall.app.add_call"
     }
 }

@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- In a call (PLAN.md S5): timer, which number, who, Speaker / Mute / Hold, End call.
-     Keypad digits send tones directly; the line under the name shows what was sent. -->
+<!-- In a call (PLAN.md S5): which number, who, then the D-pad ring (owner, 2026-11-20):
+     ▲ Speaker · ◀ Mute · ▶ Hold · ▼ + Call around a red End in the middle (OK).
+     No End call bar: the centre End, the END key and the outer END key end the call.
+     Keypad digits send tones directly; the "Sent" line shows what went out. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -9,109 +11,112 @@
 
     <include layout="@layout/bc_titlebar" />
 
-    <ScrollView
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:fillViewport="true"
-        android:focusable="false"
-        android:descendantFocusability="afterDescendants">
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/bc_gutter"
+        android:paddingTop="4dp"
+        android:paddingEnd="@dimen/bc_gutter">
 
-        <LinearLayout
+        <TextView
+            android:id="@+id/bc_call_to"
+            style="@style/BcText.Meta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/bc_accent_soft" />
+
+        <TextView
+            android:id="@+id/bc_call_name"
+            style="@style/BcText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
+            android:gravity="center"
+            android:textSize="@dimen/bc_text_header" />
+
+        <TextView
+            android:id="@+id/bc_call_number"
+            style="@style/BcText.Meta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center" />
+
+        <!-- The other call, when there are two ("Anna Becker · On hold"). -->
+        <TextView
+            android:id="@+id/bc_call_other"
+            style="@style/BcText.Meta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="@color/bc_accent"
+            android:visibility="gone" />
+
+        <!-- Fixed height so the layout doesn't jump when tones are sent (guide §4). -->
+        <TextView
+            android:id="@+id/bc_call_sent"
+            style="@style/BcText.Meta"
+            android:layout_width="match_parent"
+            android:layout_height="16dp"
+            android:gravity="center"
+            android:textColor="@color/bc_accent" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="@dimen/bc_ring_size"
+            android:layout_height="@dimen/bc_ring_size"
+            android:layout_gravity="center"
+            android:background="@drawable/bc_ring_bg"
             android:orientation="vertical"
-            android:padding="@dimen/bc_gutter">
+            android:padding="4dp">
 
-            <TextView
-                android:id="@+id/bc_call_to"
-                style="@style/BcText.Meta"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/bc_accent_soft" />
-
-            <TextView
-                android:id="@+id/bc_call_name"
-                style="@style/BcText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:maxLines="2"
-                android:paddingTop="4dp"
-                android:textSize="@dimen/bc_text_header" />
-
-            <TextView
-                android:id="@+id/bc_call_number"
-                style="@style/BcText.Meta"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center" />
-
-            <!-- Fixed height so the layout doesn't jump when tones are sent (guide §4). -->
-            <TextView
-                android:id="@+id/bc_call_sent"
-                style="@style/BcText.Meta"
-                android:layout_width="match_parent"
-                android:layout_height="20dp"
-                android:gravity="center"
-                android:textColor="@color/bc_accent" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:orientation="horizontal">
-
+            <LinearLayout style="@style/BcRingRow">
+                <Space style="@style/BcRingCell" />
                 <TextView
                     android:id="@+id/bc_call_speaker"
-                    style="@style/BcButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:textSize="@dimen/bc_text_label"
+                    style="@style/BcPetal"
+                    android:drawableTop="@drawable/bc_ic_speaker"
                     android:text="@string/bc_call_speaker" />
+                <Space style="@style/BcRingCell" />
+            </LinearLayout>
 
+            <LinearLayout style="@style/BcRingRow">
                 <TextView
                     android:id="@+id/bc_call_mute"
-                    style="@style/BcButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:layout_weight="1"
-                    android:textSize="@dimen/bc_text_label"
+                    style="@style/BcPetal"
+                    android:drawableTop="@drawable/bc_ic_mute"
                     android:text="@string/bc_call_mute" />
-
+                <TextView
+                    android:id="@+id/bc_call_end"
+                    style="@style/BcPetal"
+                    android:background="@drawable/bc_petal_end"
+                    android:drawableTop="@drawable/bc_ic_call_end"
+                    android:drawableTint="@color/bc_text_on_bar"
+                    android:text="@string/bc_call_end_short"
+                    android:textColor="@color/bc_text_on_bar" />
                 <TextView
                     android:id="@+id/bc_call_hold"
-                    style="@style/BcButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:layout_weight="1"
-                    android:textSize="@dimen/bc_text_label"
+                    style="@style/BcPetal"
+                    android:drawableTop="@drawable/bc_ic_hold"
                     android:text="@string/bc_call_hold" />
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/bc_call_end"
-                style="@style/BcButton.End"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:minHeight="48dp"
-                android:text="@string/bc_call_end" />
-
-            <TextView
-                style="@style/BcText.Meta"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:maxLines="2"
-                android:paddingTop="6dp"
-                android:text="@string/bc_incall_hint" />
+            <LinearLayout style="@style/BcRingRow">
+                <Space style="@style/BcRingCell" />
+                <TextView
+                    android:id="@+id/bc_call_add"
+                    style="@style/BcPetal"
+                    android:drawableTop="@drawable/bc_ic_add_call"
+                    android:text="@string/bc_call_add" />
+                <Space style="@style/BcRingCell" />
+            </LinearLayout>
         </LinearLayout>
-    </ScrollView>
+    </FrameLayout>
 
     <include layout="@layout/bc_footer" />
 </LinearLayout>

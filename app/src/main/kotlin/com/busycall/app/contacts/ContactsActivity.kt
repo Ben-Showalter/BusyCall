@@ -1,6 +1,5 @@
 package com.busycall.app.contacts
 
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
@@ -13,9 +12,7 @@ import com.busycall.app.bridge.Bridge
 import com.busycall.app.bridge.Bridges
 import com.busycall.app.bridge.ContactNumberUi
 import com.busycall.app.bridge.ContactUi
-import com.busycall.app.bridge.PlaceResult
-import com.busycall.app.call.InCallActivity
-import com.busycall.app.dialer.DialerActivity
+import com.busycall.app.call.Calling
 import com.busycall.app.ui.FlipBaseActivity
 import com.busycall.app.ui.MenuItem
 import com.busycall.app.ui.Menus
@@ -40,7 +37,7 @@ class ContactsActivity : FlipBaseActivity() {
     // Only while baresip is still starting: contacts appear once it's up.
     private val waitForService = Runnable { render(viewModel.state()) }
 
-    override val handlesCallKey = true
+    override val usesCallHold = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,12 +69,8 @@ class ContactsActivity : FlipBaseActivity() {
         render(viewModel.state())
     }
 
+    /** Options holds only what isn't on screen (owner, 2026-11-20). */
     override fun optionsItems(): List<MenuItem> = buildList {
-        val focused = focusedContact()
-        if (focused != null) {
-            add(MenuItem(getString(R.string.bc_dialer_call)) { showNumbers(focused) })
-            add(MenuItem(getString(R.string.bc_dialer_from_menu)) { openInDialer(focused.numbers.first()) })
-        }
         if (lastState?.on == false) add(MenuItem(getString(R.string.bc_contacts_allow)) { allow() })
     }
 
@@ -88,9 +81,15 @@ class ContactsActivity : FlipBaseActivity() {
         list.getChildAt(index)?.requestFocus()
     }
 
-    override fun onCallKey() {
-        val contact = focusedContact() ?: return
-        viewModel.firstNumber(contact)?.let { call(it) }
+    /**
+     * On a contact: a short OK opens its numbers (the row's click); CALL or a hold of OK/CALL
+     * calls its first number (short CALL → Call from…, hold → ★).
+     */
+    override fun onCallOrOk(held: Boolean, callKey: Boolean): Boolean {
+        if (!held && !callKey) return false
+        val contact = focusedContact() ?: return held || callKey
+        viewModel.firstNumber(contact)?.let { call(it, held) }
+        return true
     }
 
     private fun allow() {
@@ -144,23 +143,16 @@ class ContactsActivity : FlipBaseActivity() {
     private fun numberLine(n: ContactNumberUi): String =
         if (n.label.isEmpty()) n.display else getString(R.string.bc_contacts_number_line, n.label, n.display)
 
+    /** The contact's numbers: OK picks one, then Call from…; holding OK/CALL calls it from ★. */
     private fun showNumbers(contact: ContactUi) {
-        val items = contact.numbers.map { n ->
-            MenuItem(getString(R.string.bc_contacts_call_number, numberLine(n))) { call(n) }
-        } + MenuItem(getString(R.string.bc_dialer_from_menu)) { openInDialer(contact.numbers.first()) }
-        Menus.show(this, contact.name, items)
-    }
-
-    /** Calls from the ★ number (AGENTS §6). */
-    private fun call(n: ContactNumberUi) {
-        when (Bridges.current.placeCall(this, null, n.uri)) {
-            PlaceResult.Placed -> startActivity(Intent(this, InCallActivity::class.java))
-            is PlaceResult.Failed -> Toast.makeText(this, R.string.bc_dialer_failed, Toast.LENGTH_LONG).show()
+        val items = contact.numbers.map { n -> MenuItem(numberLine(n)) { call(n, held = false) } }
+        Menus.show(this, contact.name, items, message = getString(R.string.bc_contacts_card_tip)) { index ->
+            contact.numbers.getOrNull(index)?.let { call(it, held = true) }
         }
     }
 
-    /** "Call from…": the Dialer with the number filled in, to pick which number to call from. */
-    private fun openInDialer(n: ContactNumberUi) {
-        startActivity(Intent(this, DialerActivity::class.java).putExtra(DialerActivity.EXTRA_NUMBER, n.display))
+    /** A new call: Call from… on a short press, ★ on a hold (call/CallFrom). */
+    private fun call(n: ContactNumberUi, held: Boolean) {
+        Calling.start(this, n.uri, n.display, held)
     }
 }

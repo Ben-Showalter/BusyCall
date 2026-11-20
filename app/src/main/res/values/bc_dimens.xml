@@ -14,4 +14,8 @@
     <dimen name="bc_focus_stroke">2dp</dimen>
     <dimen name="bc_corner">8dp</dimen>
     <dimen name="bc_status_dot">8dp</dimen>
+    <!-- In-call D-pad ring: the rounded square and its petals. -->
+    <dimen name="bc_ring_size">174dp</dimen>
+    <dimen name="bc_ring_corner">40dp</dimen>
+    <dimen name="bc_petal_corner">12dp</dimen>
 </resources>

@@ -99,8 +99,9 @@ class NumberSetupActivity : FlipBaseActivity() {
         start.post { if (currentFocus == null || currentFocus == name) start.requestFocus() }
     }
 
+    // Options holds only what isn't on screen (owner, 2026-11-20): Save and connect is a button.
+    // Connection and "+" rows stay here too, for when the T9 keyboard has the softkeys (guide §3).
     override fun optionsItems(): List<MenuItem> = listOf(
-        MenuItem(getString(R.string.bc_save_connect)) { save() },
         MenuItem(getString(if (showPassword) R.string.bc_hide_password else R.string.bc_show_password)) {
             showPassword = !showPassword
             val at = password.selectionStart

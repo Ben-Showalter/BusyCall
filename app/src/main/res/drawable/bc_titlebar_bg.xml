@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Title bar: near-black with a thin gray line along the bottom. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item><color android:color="@color/bc_line" /></item>
+    <item android:bottom="1dp"><color android:color="@color/bc_bar" /></item>
+</layer-list>

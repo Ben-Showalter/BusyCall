@@ -69,8 +69,41 @@ abstract class FlipBaseActivity : Activity() {
     /** Keys a screen wants before the defaults, on UP. Return true if handled. */
     protected open fun onLogicalKeyUp(key: LogicalKey): Boolean = false
 
+    /**
+     * Keys this screen takes completely (DOWN and UP consumed, [onLogicalKeyUp] on UP), so focus
+     * never moves on them: the in-call D-pad ring uses the arrows and OK this way.
+     */
+    protected open fun claimsKey(key: LogicalKey): Boolean = false
+
+    /**
+     * True on screens that place new calls (Dialer, Contacts): OK and CALL are timed here, a
+     * short press and a hold go to [onCallOrOk] (guide §1: time holds yourself).
+     */
+    protected open val usesCallHold: Boolean = false
+
+    /**
+     * OK or CALL released before [CALL_HOLD_MS] ([held] false), or held that long ([held] true,
+     * while still down). Return false for a short OK to let the focused view handle it as a click.
+     */
+    protected open fun onCallOrOk(held: Boolean, callKey: Boolean): Boolean = false
+
+    /**
+     * Replaces the Options softkey on this screen with another label and job (in a call: "Home").
+     * Null keeps Options.
+     */
+    protected open fun softkeyOverride(): Pair<String, () -> Unit>? = null
+
     // Keys whose DOWN this window saw and consumed, by keycode.
     private val pressed = HashSet<Int>()
+
+    // OK/CALL hold timing for usesCallHold screens.
+    private val holdHandler = Handler(Looper.getMainLooper())
+    private var holdFired = false
+    private var holdIsCallKey = false
+    private val holdRunnable = Runnable {
+        holdFired = true
+        onCallOrOk(held = true, callKey = holdIsCallKey)
+    }
 
     private val barHandler = Handler(Looper.getMainLooper())
     private var barRunning = false
@@ -103,6 +136,7 @@ abstract class FlipBaseActivity : Activity() {
 
     override fun onPause() {
         pressed.clear()
+        holdHandler.removeCallbacks(holdRunnable)
         barRunning = false
         barHandler.removeCallbacks(barTick)
         super.onPause()
@@ -128,7 +162,10 @@ abstract class FlipBaseActivity : Activity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) SystemBars.hideNavigation(this) else pressed.clear()
+        if (hasFocus) SystemBars.hideNavigation(this) else {
+            pressed.clear()
+            holdHandler.removeCallbacks(holdRunnable)
+        }
     }
 
     override fun onContentChanged() {
@@ -181,12 +218,35 @@ abstract class FlipBaseActivity : Activity() {
             else -> {}
         }
 
+        // New-call screens: OK and CALL, a short press vs a hold (timed here).
+        if (usesCallHold && !typing && (key == LogicalKey.Ok || key == LogicalKey.Call)) {
+            if (down) {
+                if (event.repeatCount == 0) {
+                    pressed.add(event.keyCode)
+                    holdFired = false
+                    holdIsCallKey = key == LogicalKey.Call
+                    holdHandler.removeCallbacks(holdRunnable)
+                    holdHandler.postDelayed(holdRunnable, CALL_HOLD_MS)
+                }
+                return true
+            }
+            if (up && pressed.remove(event.keyCode)) {
+                holdHandler.removeCallbacks(holdRunnable)
+                if (!holdFired && !event.isCanceled) {
+                    val handled = onCallOrOk(held = false, callKey = key == LogicalKey.Call)
+                    if (!handled && key == LogicalKey.Ok) currentFocus?.performClick()
+                }
+                holdFired = false
+            }
+            return true // the UP after a hold, or of a press that began in another window
+        }
+
         // Digits (outside text fields) and, on screens that use it, CALL:
         // consume the whole press and act on UP for a DOWN this window saw.
         val ownsKey = when (key) {
             is LogicalKey.Digit -> !typing
             LogicalKey.Call -> handlesCallKey
-            else -> false
+            else -> claimsKey(key)
         }
         if (ownsKey) {
             if (down) {
@@ -214,8 +274,9 @@ abstract class FlipBaseActivity : Activity() {
         return super.dispatchKeyEvent(event)
     }
 
-    /** Opens this screen's Options menu (also the footer label's tap action). */
+    /** Opens this screen's Options menu (also the footer label's tap action), or runs its override. */
     protected fun openOptions() {
+        softkeyOverride()?.let { it.second(); return }
         val items = optionsItems()
         if (items.isEmpty()) return
         Menus.show(this, getString(R.string.bc_options), items)
@@ -230,7 +291,24 @@ abstract class FlipBaseActivity : Activity() {
             footer.removeView(label)
             footer.addView(label, wanted)
         }
-        label.visibility = if (optionsItems().isEmpty()) View.INVISIBLE else View.VISIBLE
+        val override = softkeyOverride()
+        (label as? TextView)?.text = override?.first ?: getString(R.string.bc_options)
+        label.visibility = if (override == null && optionsItems().isEmpty()) View.INVISIBLE else View.VISIBLE
+    }
+
+    /** The phone's home screen; a call carries on (the "On call" bar and notification bring it back). */
+    protected fun goToPhoneHome() {
+        try {
+            startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } catch (e: android.content.ActivityNotFoundException) {
+            moveTaskToBack(true)
+        }
+    }
+
+    companion object {
+        /** How long OK/CALL must be held to call from the ★ number (guide §1: our own timer). */
+        const val CALL_HOLD_MS = 700L
     }
 
     /** Sets the footer's key hint (or hides it). */

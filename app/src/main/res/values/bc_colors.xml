@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- BusyCall colour roles (AGENTS.md §9: dark red theme). Use these names in layouts, never raw hex. -->
+<!-- BusyCall colour roles (AGENTS.md §9: black with gray accents). Use these names in layouts, never raw hex. -->
 <resources>
-    <!-- Title and softkey bars; white text on it is 12:1. -->
-    <color name="bc_bar">#FF6E0A12</color>
-    <color name="bc_background">#FF0B0B0C</color>
+    <!-- Title and softkey bars (near-black, with a bc_line divider); white text on it is 18:1. -->
+    <color name="bc_bar">#FF121214</color>
+    <color name="bc_background">#FF000000</color>
     <color name="bc_surface">#FF1C1C1E</color>
     <color name="bc_surface_dialog">#FF26262A</color>
     <color name="bc_line">#FF3A3A3E</color>
@@ -15,15 +15,15 @@
     <color name="bc_text_muted">#FFB8B8B8</color>
     <!-- Missed calls, errors. -->
     <color name="bc_text_alert">#FFFF8A8A</color>
-    <color name="bc_accent">#FFFF8F8F</color>
-    <color name="bc_accent_soft">#FFFFB4B4</color>
-    <color name="bc_footer_hint">#FFFFD6D6</color>
+    <color name="bc_accent">#FFD0D0D0</color>
+    <color name="bc_accent_soft">#FFE0E0E0</color>
+    <color name="bc_footer_hint">#FFC8C8C8</color>
 
-    <!-- Focus: a light-red ring over a dark-red tint (the guide's list_row_selector, recoloured). -->
-    <color name="bc_focus_ring">#FFFF6B6B</color>
-    <color name="bc_focus_tint">#996E0A12</color>
+    <!-- Focus: a light-gray ring over a dark-gray tint (the guide's list_row_selector, recoloured). -->
+    <color name="bc_focus_ring">#FFBDBDBD</color>
+    <color name="bc_focus_tint">#FF2A2A2E</color>
 
-    <!-- Call/Answer green; Decline/End a brighter red than the bars. Always with a text label. -->
+    <!-- Call/Answer green; Decline/End red (kept for meaning). Always with a text label. -->
     <color name="bc_call">#FF1E7A34</color>
     <color name="bc_end">#FFC62828</color>
 

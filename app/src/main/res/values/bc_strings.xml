@@ -223,12 +223,23 @@
     <string name="bc_call_hold">Hold</string>
     <string name="bc_call_resume">Resume</string>
     <string name="bc_call_end">End call</string>
+    <!-- Short label on the red key in the middle of the in-call ring. -->
+    <string name="bc_call_end_short">End</string>
+    <!-- Ring action: place another call (the current one goes on hold). -->
+    <string name="bc_call_add">+ Call</string>
+    <!-- Ring action with two calls: switch to the other one. -->
+    <string name="bc_call_swap">Swap</string>
+    <!-- The other call, when there are two. %1$s who, %2$s its state ("On hold"). -->
+    <string name="bc_call_other">%1$s · %2$s</string>
+    <string name="bc_call_state_on_hold">On hold</string>
+    <!-- The softkey in a call and on an incoming call: goes to the phone's home screen; the call carries on. -->
+    <string name="bc_softkey_home">Home</string>
     <string name="bc_call_speaker_on">Speaker on</string>
     <string name="bc_call_speaker_off">Speaker off</string>
     <string name="bc_call_unmute">Unmute</string>
     <string name="bc_call_hang_up">Hang up</string>
     <string name="bc_incall_hint">0–9 send tones · END hangs up</string>
-    <string name="bc_incall_footer">BACK keeps the call</string>
+    <string name="bc_incall_footer">0–9 tones · BACK keeps the call</string>
     <string name="bc_call_did_not_start">The call didn\'t start. Check that the number is connected, then try again.</string>
     <!-- Bar on other screens during a call. %1$s timer, %2$s who. -->
     <string name="bc_oncall_bar">On call · %1$s · %2$s</string>
@@ -237,6 +248,11 @@
 
     <!-- Dialer -->
     <string name="bc_dialer_title">New call</string>
+    <!-- Dialer title when opened from a call's "+ Call". -->
+    <string name="bc_dialer_add_title">Add a call</string>
+    <!-- The Call from… picker. %1$s = the number being called. -->
+    <string name="bc_callfrom_title">Call %1$s from</string>
+    <string name="bc_callfrom_tip">Tip: hold OK or CALL to call from ★</string>
     <string name="bc_dialer_number">Number or name</string>
     <!-- Before a contact number in the Dialer's matches. %1$s = "Mobile". -->
     <string name="bc_match_label_prefix">%1$s · </string>
@@ -246,7 +262,8 @@
     <string name="bc_dialer_from_menu">Call from…</string>
     <string name="bc_dialer_call">Call</string>
     <string name="bc_dialer_clear">Clear number</string>
-    <string name="bc_dialer_footer">CALL dials · CLEAR deletes</string>
+    <!-- OK/CALL short = Call from…, held = the ★ number. -->
+    <string name="bc_dialer_footer">OK: call from… · hold: ★</string>
     <string name="bc_dialer_type_number">Type a number first.</string>
     <string name="bc_dialer_no_numbers">No number to call from: add one in Numbers.</string>
     <string name="bc_dialer_invalid">That isn\'t a number or address BusyCall can call.</string>
@@ -255,6 +272,8 @@
 
     <!-- S3 Contacts -->
     <string name="bc_contacts_title">Contacts</string>
+    <!-- Under a contact's name on its numbers card. -->
+    <string name="bc_contacts_card_tip">OK: choose where to call from · hold OK/CALL: ★</string>
     <string name="bc_contacts_footer">2–9 jump · CALL calls</string>
     <string name="bc_contacts_off">Contacts are off — Options › Allow contacts</string>
     <string name="bc_contacts_allow">Allow contacts</string>

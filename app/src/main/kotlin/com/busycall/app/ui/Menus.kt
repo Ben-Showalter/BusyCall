@@ -2,12 +2,18 @@ package com.busycall.app.ui
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.DialogInterface
+import android.os.Handler
+import android.os.Looper
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.TextView
+import com.busycall.app.keys.KeyRouter
+import com.busycall.app.keys.LogicalKey
 import com.tutpro.baresip.R
 
 /**
@@ -28,8 +34,18 @@ data class MenuItem(
  */
 object Menus {
 
-    /** A list menu. [message] is an optional question shown under the title. */
-    fun show(activity: Activity, title: String, items: List<MenuItem>, message: String? = null) {
+    /**
+     * A list menu. [message] is an optional question shown under the title. With [onHold],
+     * holding OK or CALL on an entry runs `onHold(index)` instead of the entry (own timer,
+     * guide §1); a short CALL acts like OK.
+     */
+    fun show(
+        activity: Activity,
+        title: String,
+        items: List<MenuItem>,
+        message: String? = null,
+        onHold: ((Int) -> Unit)? = null,
+    ) {
         if (activity.isFinishing) return
         val dialog = AlertDialog.Builder(activity, R.style.BcDialog)
             .setCustomTitle(titleView(activity, title, message))
@@ -38,6 +54,7 @@ object Menus {
                 items[which].action()
             }
             .create()
+        if (onHold != null) dialog.setOnKeyListener(HoldListener(dialog, items, onHold))
         dialog.show()
         dialog.listView?.apply {
             selector = activity.getDrawable(R.drawable.bc_focus_row)
@@ -67,6 +84,55 @@ object Menus {
             .create()
         dialog.show()
         card(dialog)
+    }
+
+    /** OK/CALL press vs hold inside a menu. Keys are read through KeyRouter (AGENTS §2). */
+    private class HoldListener(
+        private val dialog: AlertDialog,
+        private val items: List<MenuItem>,
+        private val onHold: (Int) -> Unit,
+    ) : DialogInterface.OnKeyListener {
+        private val handler = Handler(Looper.getMainLooper())
+        private var fired = false
+        private var downSeen = false
+        private val hold = Runnable {
+            fired = true
+            val index = selected()
+            dialog.dismiss()
+            onHold(index)
+        }
+
+        private fun selected(): Int =
+            (dialog.listView?.selectedItemPosition ?: 0).coerceIn(0, (items.size - 1).coerceAtLeast(0))
+
+        override fun onKey(d: DialogInterface, keyCode: Int, event: KeyEvent): Boolean {
+            val key = KeyRouter.route(keyCode, event.scanCode)
+            if (key != LogicalKey.Ok && key != LogicalKey.Call) return false
+            val isCall = key == LogicalKey.Call
+            if (event.action == KeyEvent.ACTION_DOWN) {
+                if (event.repeatCount == 0) {
+                    fired = false
+                    downSeen = true
+                    handler.removeCallbacks(hold)
+                    handler.postDelayed(hold, FlipBaseActivity.CALL_HOLD_MS)
+                }
+                return isCall // OK's DOWN still reaches the list (pressed state)
+            }
+            if (event.action == KeyEvent.ACTION_UP) {
+                handler.removeCallbacks(hold)
+                val wasDown = downSeen
+                downSeen = false
+                if (fired) return true // the hold already acted: swallow the UP
+                if (isCall && wasDown && items.isNotEmpty()) {
+                    val index = selected()
+                    dialog.dismiss()
+                    items[index].action()
+                    return true
+                }
+                return isCall // a short OK clicks the entry as usual
+            }
+            return isCall
+        }
     }
 
     private fun card(dialog: AlertDialog) {

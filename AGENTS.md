@@ -35,10 +35,13 @@ guide alive" section), not only here.
    softkey does nothing on every screen. Nothing may depend on it.
 4. **Every action works three ways:** a physical key, D-pad focus + OK, and touch.
 5. **A call can always be ended**, whatever END does on a given phone: the
-   in-call screen always has an on-screen **End call** button and Options >
-   **Hang up**.
+   in-call screen always has an on-screen **End** button (the red centre of the
+   D-pad ring, which OK presses). There is no Options menu in a call: the
+   softkey is **Home** (owner's decision, 2026-11-20).
 6. **No vendor special cases.** No `if (server is Grandstream)`. A setting other
    systems can use too, or a note in `docs/PBX-NOTES.md`.
+7. **Options holds only what isn't on screen** (settings, lists elsewhere): never
+   an item that repeats an on-screen button or key (owner, 2026-11-20).
 
 ## 0a. The name is not final
 
@@ -142,6 +145,10 @@ The full key table is `PLAN.md §3.1`. In code:
 - **Digits from Home or a list open the Dialer on key UP** (guide: "Digits that
   open the dialer act on key UP").
 - **Hold 0 for `+`: time it yourself** (guide: don't trust `isLongPress` on Kyocera).
+  The same goes for **holding OK or CALL** to call from ★ (`FlipBaseActivity.usesCallHold`,
+  700 ms; inside menus `Menus.show(onHold = …)`).
+- **In a call, the D-pad is the ring:** ▲ Speaker · ◀ Mute · ▶ Hold/Resume/Swap ·
+  ▼ + Call · OK = End. The screen claims those keys (`claimsKey`), so focus never moves.
 - **Clear arrives as `BACK`.** In the number field: delete a digit while there is
   one; at an empty field, go back.
 - **BACK never hangs up and never declines.** On an incoming call it silences the
@@ -171,8 +178,10 @@ The full key table is `PLAN.md §3.1`. In code:
 
 - Every screen that shows or places a call shows **which number** it's on:
   "to Office · 104" (incoming), "from Office · 104" (in call), "Missed · to Home" (recents).
-- Outgoing calls use: the "Call from" choice on the Dialer, else the number the
-  call came in on (call back from Recents / Call log), else the ★ default.
+- Outgoing calls (owner, 2026-11-20): a **new call** (Dialer, Contacts) opens the
+  **Call from…** picker on a short OK/CALL and uses the ★ default on a held OK/CALL
+  (no picker with only one way to call; there is no ◀ ▶ Call-from row). A **call-back**
+  (Recents, Call log) uses the number the call came in on, with no picker.
 - An account that isn't registered is shown as such everywhere it appears, with
   the reason in plain words and Retry (guide §7). Never hide it.
 - Name numbers by the user's label ("Office") first, the extension or number second.
@@ -241,14 +250,16 @@ alpha-only animation.
 
 BusyCall additions:
 
-- Call/Answer = green, Decline/End = red, **always with a text label too**.
-- **Dark red theme.** Title and softkey bars `#6E0A12` with white text; background
-  near-black `#0B0B0C`; focus = 2 dp ring `#FF6B6B` over a `#6E0A12` tint (the
-  guide's `list_row_selector`, recolored); accent text `#FF8F8F`, `#FFB4B4`;
-  footer hints `#FFD6D6`. Names live in `colors.xml` (`bar`, `focus_ring`,
-  `focus_tint`, `accent`, `accent_soft`), never raw hex in layouts.
-- Decline/End use a **brighter** red (`#C62828`) than the bars, always with an
-  icon and a label, so they never read as part of the chrome.
+- **Black with gray accents** (owner, 2026-11-20). Background `#000000`; title and
+  softkey bars `#121214` with a 1 dp `#3A3A3E` divider; focus = 2 dp ring `#BDBDBD`
+  over a `#2A2A2E` tint (the guide's `list_row_selector`, recolored); accent text
+  `#D0D0D0`, `#E0E0E0`; footer hints `#C8C8C8`. Names live in `bc_colors.xml`
+  (`bc_bar`, `bc_focus_ring`, `bc_focus_tint`, `bc_accent`, `bc_accent_soft`), never
+  raw hex in layouts. `ui/PaletteTest` checks text stays ≥ 7:1.
+- Color only where it means something: Call/Answer green `#1E7A34`, Decline/End red
+  `#C62828` (always with an icon and a label), status dots, red for missed calls
+  and errors.
+- The launcher icon is BusyCall's own (`bc_ic_launcher`, the D-pad design).
 - All strings in `strings.xml` with translator comments; placeholders, not
   concatenation.
 
@@ -293,11 +304,13 @@ Test on a 240×320 mdpi emulator with touch off, then on the real phone (guide c
 - **Using the non-Options softkey "just this once."**
 - **Asking before moving Options left.** The first MENU press moves it silently
   and also opens Options. No dialog.
-- **Assuming END reaches the app.** It often doesn't. Keep the on-screen End.
+- **Assuming END reaches the app.** It often doesn't. Keep the on-screen End (the
+  ring's red centre).
+- **Putting on-screen actions in Options**, or bringing back an Options menu in a call.
 - **Consuming END** or bringing the app back after it. Hang up, then let the
   system do what END does (usually Home).
-- **Leaving the app after the on-screen End call button.** Only the END key
-  leaves; the button returns to the previous screen.
+- **Leaving the app after the on-screen End button.** Only the END key leaves;
+  the button returns to the previous screen (or to the other call, with two).
 - **Hanging up on BACK.**
 - **Forgetting which number.** Every call screen and log row names it.
 - **Hiding the navigation bar on touch phones**, or showing the dial pad on

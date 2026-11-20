@@ -16,7 +16,10 @@ import com.busycall.app.call.CallText
 import com.busycall.app.call.InCallAction
 import com.busycall.app.call.InCallViewModel
 import com.busycall.app.call.IncomingViewModel
-import com.busycall.app.dialer.DialOutcome
+import com.busycall.app.call.CallFromDecision
+import com.busycall.app.call.CallFromStep
+import com.busycall.app.call.RingKey
+import com.busycall.app.dialer.DialTarget
 import com.busycall.app.dialer.DialerViewModel
 import com.busycall.app.keys.HoldTimer
 import org.junit.Assert.assertEquals
@@ -91,12 +94,17 @@ class CallsTest {
         val vm = InCallViewModel(bridge)
         val s = vm.state()
         assertEquals("01:15", s.timer)
-        assertEquals(listOf(InCallAction.Speaker, InCallAction.Mute, InCallAction.Hold, InCallAction.HangUp), vm.actions(s))
+        assertEquals(InCallAction.Speaker, vm.actionFor(RingKey.Up, s))
+        assertEquals(InCallAction.Mute, vm.actionFor(RingKey.Left, s))
+        assertEquals(InCallAction.Hold, vm.actionFor(RingKey.Right, s))
+        assertEquals(InCallAction.AddCall, vm.actionFor(RingKey.Down, s))
+        assertEquals(InCallAction.HangUp, vm.actionFor(RingKey.Center, s))
         vm.toggleMute(); vm.toggleSpeaker()
         assertTrue(vm.state().muted)
         assertTrue(vm.state().speaker)
         vm.hold()
-        assertEquals(listOf(InCallAction.Speaker, InCallAction.Mute, InCallAction.Resume, InCallAction.HangUp), vm.actions(vm.state()))
+        assertEquals(InCallAction.Resume, vm.actionFor(RingKey.Right, vm.state()))
+        assertEquals(InCallAction.Nothing, vm.actionFor(RingKey.Down, vm.state())) // + Call only from a live call
         vm.resume()
         assertEquals(CallState.Connected, vm.state().call?.state)
     }
@@ -113,36 +121,17 @@ class CallsTest {
     private val office = NumberUi("sip:104@pbx", "Office", "104", "pbx", Transport.TLS, NumberStatus.Registered, 0, false)
     private val home = NumberUi("sip:555@voip", "Home", "555", "voip", Transport.UDP, NumberStatus.Registered, 0, false)
 
-    @Test fun `dialer starts on the default number, offers the SIM last, clamps at the ends`() {
-        val bridge = FakeBridge(numbers = mutableListOf(office, home))
-        bridge.defaultId = home.id
-        val vm = DialerViewModel(bridge, hasTelephony = true)
-        assertEquals("Home", vm.state().from?.label)
-        vm.previousFrom()
-        assertEquals("Home", vm.state().from?.label) // already first: no wrap
-        vm.nextFrom(); vm.nextFrom(); vm.nextFrom()
-        assertNull(vm.state().from?.id) // Phone (SIM), last
-        assertEquals(3, vm.fromChoices().size)
-    }
-
-    @Test fun `dialer typing, deleting and calling`() {
-        val bridge = FakeBridge(numbers = mutableListOf(office))
-        val vm = DialerViewModel(bridge, hasTelephony = false)
+    @Test fun `dialer typing, deleting and what OK or CALL calls`() {
+        val vm = DialerViewModel(FakeBridge(numbers = mutableListOf(office)))
         "*97".forEach { vm.type(it) }
         assertTrue(vm.delete())
         vm.type('7')
-        val placed = mutableListOf<Pair<String, String>>()
-        val outcome = vm.call { from, n -> placed.add(from to n); PlaceResult.Placed }
-        assertEquals(DialOutcome.Placed, outcome)
-        assertEquals(listOf(office.id to "*97"), placed)
+        assertEquals(DialTarget.Dial("*97", "*97"), vm.target(null))
+        val match = com.busycall.app.dialer.DialMatch("Anna", "Mobile", "tel:+15550198", "+15550198", 0..0, null)
+        assertEquals(DialTarget.Dial("tel:+15550198", "+15550198"), vm.target(match))
         vm.setNumber("")
         assertFalse(vm.delete()) // empty: BACK leaves the Dialer
-    }
-
-    @Test fun `dialer from the SIM hands the number to the phone`() {
-        val vm = DialerViewModel(FakeBridge(), hasTelephony = true)
-        vm.setNumber("5550142")
-        assertEquals(DialOutcome.PhoneDialer("5550142"), vm.call { _, _ -> error("must not place a SIP call") })
+        assertEquals(DialTarget.NothingToCall, vm.target(null))
     }
 
     @Test fun `dialer empty plus CALL fills in the last number called`() {
@@ -153,18 +142,66 @@ class CallsTest {
                 RecentUi("Desk", "sip:100@pbx", "Office", office.id, CallDirection.Out, false, 2L),
             ),
         )
-        val vm = DialerViewModel(bridge, hasTelephony = false)
-        assertEquals(DialOutcome.Redialed, vm.call { _, _ -> error("not yet") })
+        val vm = DialerViewModel(bridge)
+        assertEquals(DialTarget.Redialed, vm.target(null))
         assertEquals("100", vm.number)
     }
 
-    @Test fun `dialer reports problems`() {
-        val vm = DialerViewModel(FakeBridge(numbers = mutableListOf(office)), hasTelephony = false)
-        vm.setNumber("104")
-        assertEquals(DialOutcome.Failed(PlaceProblem.PhoneBusy), vm.call { _, _ -> PlaceResult.Failed(PlaceProblem.PhoneBusy) })
-        val none = DialerViewModel(FakeBridge(), hasTelephony = false)
-        none.setNumber("104")
-        assertEquals(DialOutcome.Failed(PlaceProblem.NoNumber), none.call { _, _ -> PlaceResult.Placed })
+    // ---- Call from (owner, 2026-11-20) ----
+
+    @Test fun `call from choices put the default first and the SIM last`() {
+        val bridge = FakeBridge(numbers = mutableListOf(office, home))
+        bridge.defaultId = home.id
+        val choices = CallFromDecision.choices(bridge, hasTelephony = true)
+        assertEquals(listOf("Home", "Office", ""), choices.map { it.label })
+        assertNull(choices.last().id)
+        assertEquals(2, CallFromDecision.choices(bridge, hasTelephony = false).size)
+        assertTrue(CallFromDecision.choices(FakeBridge(running = false), hasTelephony = false).isEmpty())
+    }
+
+    @Test fun `short press picks, hold calls from the default, call-backs use their number`() {
+        val choices = CallFromDecision.choices(FakeBridge(numbers = mutableListOf(office, home)), hasTelephony = true)
+        assertEquals(CallFromStep.Pick(choices), CallFromDecision.decide(held = false, choices = choices))
+        assertEquals(CallFromStep.CallNow(choices.first()), CallFromDecision.decide(held = true, choices = choices))
+        val back = CallFromDecision.decide(held = false, choices = choices, callBackFrom = home.id)
+        assertEquals(home.id, (back as CallFromStep.CallNow).from.id)
+        // Only one way to call: no picker.
+        val one = CallFromDecision.choices(FakeBridge(numbers = mutableListOf(office)), hasTelephony = false)
+        assertEquals(CallFromStep.CallNow(one.single()), CallFromDecision.decide(held = false, choices = one))
+        assertEquals(CallFromStep.NoNumber, CallFromDecision.decide(held = false, choices = emptyList()))
+        // A call-back whose number is gone falls back to the usual rules.
+        assertEquals(CallFromStep.CallNow(one.single()), CallFromDecision.decide(false, one, callBackFrom = "sip:gone@x"))
+    }
+
+    // ---- In-call ring with two calls ----
+
+    @Test fun `two calls swap on the right key, hang-up follows the other`() {
+        val bridge = FakeBridge()
+        bridge.calls.add(call(1, CallState.OnHold))
+        bridge.calls.add(call(2, CallState.Connected))
+        val vm = InCallViewModel(bridge)
+        val s = vm.state()
+        assertEquals(2L, s.call?.id) // the newest
+        assertEquals(1L, s.other?.id)
+        assertEquals(InCallAction.Swap, vm.actionFor(RingKey.Right, s))
+        assertEquals(InCallAction.Nothing, vm.actionFor(RingKey.Down, s)) // two calls already
+        vm.swap()
+        assertEquals(CallState.OnHold, bridge.calls.first { it.id == 2L }.state)
+        assertEquals(CallState.Connected, bridge.calls.first { it.id == 1L }.state)
+        assertEquals(1L, vm.state().call?.id)
+        assertTrue(vm.followOther())
+        assertEquals(2L, vm.callId)
+    }
+
+    @Test fun `add call holds the current one first, no call means only End works`() {
+        val bridge = FakeBridge()
+        bridge.calls.add(call(5, CallState.Connected))
+        val vm = InCallViewModel(bridge)
+        vm.state()
+        vm.prepareAddCall()
+        assertEquals(CallState.OnHold, bridge.calls.single().state)
+        val empty = InCallViewModel(FakeBridge()).let { it.actionFor(RingKey.Up, it.state()) to it.actionFor(RingKey.Center, it.state()) }
+        assertEquals(InCallAction.Nothing to InCallAction.HangUp, empty)
     }
 
     // ---- Hold 0 for + ----

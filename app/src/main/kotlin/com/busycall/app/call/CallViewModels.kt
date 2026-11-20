@@ -40,27 +40,35 @@ data class InCallState(
     val speaker: Boolean,
     /** Keypad tones sent on this call, shown so the user sees the PIN went out. */
     val sentDigits: String,
+    /** The other call, when there are two (one is on hold). */
+    val other: CallUi? = null,
 )
 
-/** What the in-call Options menu offers, in order. */
-enum class InCallAction { Speaker, Mute, Hold, Resume, HangUp }
+/** The five keys of the in-call D-pad ring (owner, 2026-11-20). */
+enum class RingKey { Up, Down, Left, Right, Center }
+
+/** What a ring key does now. */
+enum class InCallAction { Speaker, Mute, Hold, Resume, Swap, AddCall, HangUp, Nothing }
 
 class InCallViewModel(private val bridge: Bridge = Bridges.current) {
     var callId: Long? = null
     private val sent = StringBuilder()
 
     fun state(): InCallState {
-        val call = pickCall(bridge.calls(), callId) { it.state != CallState.Ringing }
+        val calls = bridge.calls()
+        val call = pickCall(calls, callId) { it.state != CallState.Ringing }
         if (call != null && call.id != callId) {
             callId = call.id
             sent.setLength(0)
         }
+        val other = calls.lastOrNull { it.id != call?.id && it.state != CallState.Ended && it.state != CallState.Ringing }
         return InCallState(
             call = call,
             timer = if (call?.state == CallState.Connected || call?.state == CallState.OnHold) CallText.duration(call.durationSec) else "",
             muted = bridge.isMuted(),
             speaker = bridge.isSpeakerOn(),
             sentDigits = sent.toString(),
+            other = other,
         )
     }
 
@@ -74,15 +82,24 @@ class InCallViewModel(private val bridge: Bridge = Bridges.current) {
         return true
     }
 
-    fun actions(state: InCallState): List<InCallAction> = buildList {
-        add(InCallAction.Speaker)
-        add(InCallAction.Mute)
-        when (state.call?.state) {
-            CallState.Connected -> add(InCallAction.Hold)
-            CallState.OnHold -> add(InCallAction.Resume)
-            else -> {}
+    /**
+     * The ring: ▲ Speaker · ◀ Mute · ▶ Hold (Resume when on hold, Swap with two calls) ·
+     * ▼ + Call · OK End. Pure, unit-tested.
+     */
+    fun actionFor(key: RingKey, state: InCallState): InCallAction {
+        val call = state.call ?: return if (key == RingKey.Center) InCallAction.HangUp else InCallAction.Nothing
+        return when (key) {
+            RingKey.Up -> InCallAction.Speaker
+            RingKey.Left -> InCallAction.Mute
+            RingKey.Center -> InCallAction.HangUp
+            RingKey.Down -> if (state.other == null && call.state == CallState.Connected) InCallAction.AddCall else InCallAction.Nothing
+            RingKey.Right -> when {
+                state.other != null -> InCallAction.Swap
+                call.state == CallState.Connected -> InCallAction.Hold
+                call.state == CallState.OnHold -> InCallAction.Resume
+                else -> InCallAction.Nothing
+            }
         }
-        add(InCallAction.HangUp)
     }
 
     fun toggleMute() = bridge.setMuted(!bridge.isMuted())
@@ -94,6 +111,30 @@ class InCallViewModel(private val bridge: Bridge = Bridges.current) {
 
     fun resume() {
         callId?.let { bridge.resume(it) }
+    }
+
+    /** Two calls: hold this one, resume the other, and show it. */
+    fun swap() {
+        val state = state()
+        val other = state.other ?: return
+        state.call?.let { if (it.state == CallState.Connected) bridge.hold(it.id) }
+        if (other.state == CallState.OnHold) bridge.resume(other.id)
+        callId = other.id
+        sent.setLength(0)
+    }
+
+    /** "+ Call": put this call on hold before the Dialer opens. */
+    fun prepareAddCall() {
+        val call = state().call ?: return
+        if (call.state == CallState.Connected) bridge.hold(call.id)
+    }
+
+    /** After a hang-up, follow the other call if there is one. Returns true if there is. */
+    fun followOther(): Boolean {
+        val other = state().other ?: return false
+        callId = other.id
+        sent.setLength(0)
+        return true
     }
 
     companion object {

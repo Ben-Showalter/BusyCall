@@ -61,13 +61,13 @@ The core of the product. It works the same on every screen.
 |---|---|---|---|
 | **0–9, `*`, `#`** | Open the Dialer with that digit typed (on key **UP**, per the guide). In the Dialer, digits match numbers **and** names (§3.3). | — | Send keypad tones (DTMF) |
 | Hold **0** (timed by us, 700 ms) | Types `+` | — | — |
-| **CALL** | Call the focused contact or recent, or the typed number. Empty Dialer: redial. | **Answer** | — |
+| **CALL** | Dialer/Contacts (new call): short = **Call from…** picker, **hold = call from ★**. Recents/Call log: call back from the number it came in on. Empty Dialer: redial. | **Answer** | — |
 | **END** (`KEYCODE_ENDCALL`) | Leave to the system (usually Home) | **Decline**, then the system's own END action | **Hang up**, then the system's own END action (usually leaves the app). See §3.4. |
-| **Options softkey** / **MENU** | Open this screen's Options menu | Options: Silence | Options: Speaker, Mute, Hold, Transfer, Keypad, Hang up |
+| **Options softkey** / **MENU** | Open this screen's Options menu (only what isn't on screen) | **Home** (phone's home screen) | **Home** (the call carries on) |
 | **The other softkey** | **Nothing.** No label, no job. | — | — |
-| **D-pad ↑ ↓** | Move focus | Move between Answer / Decline | Move between buttons |
-| **D-pad ← →** | On the "Call from" row: change number. Elsewhere: between side-by-side buttons only. | Same | Same |
-| **OK** (`DPAD_CENTER` or `ENTER`) | Activate the focused item | Activate focused button | Activate focused button |
+| **D-pad ↑ ↓** | Move focus | Move between Answer / Decline | ▲ **Speaker** · ▼ **+ Call** |
+| **D-pad ← →** | Between side-by-side buttons only | Same | ◀ **Mute** · ▶ **Hold** / Resume / Swap |
+| **OK** (`DPAD_CENTER` or `ENTER`) | Activate the focused item. Dialer/Contacts: short = Call from…, **hold = call from ★** | Activate focused button | **End call** |
 | **BACK / Clear** (Clear sends `BACK` on Kyocera) | Delete a typed digit; at an empty field or a list, go back | Silence ringer (**never** declines) | Leave the screen; **the call keeps running** |
 | **Outer END** (Kyocera scan code 764 / 172) | — | Decline | Hang up |
 | **Outer Speaker** (scan code 765 / 213) | — | — | Toggle speaker |

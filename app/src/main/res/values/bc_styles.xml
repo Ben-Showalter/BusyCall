@@ -84,4 +84,35 @@
         <item name="android:background">@drawable/bc_button_call</item>
         <item name="android:textColor">@color/bc_text_on_bar</item>
     </style>
+
+    <!-- In-call D-pad ring (bc_activity_incall): three rows of three cells. -->
+    <style name="BcRingRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:orientation">horizontal</item>
+    </style>
+
+    <style name="BcRingCell">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+    </style>
+
+    <!-- A ring action: icon over a short label; lit (activated) when on. Focus + touch. -->
+    <style name="BcPetal" parent="BcRingCell">
+        <item name="android:layout_margin">2dp</item>
+        <item name="android:background">@drawable/bc_petal</item>
+        <item name="android:gravity">center</item>
+        <item name="android:drawablePadding">1dp</item>
+        <item name="android:drawableTint">@color/bc_petal_text</item>
+        <item name="android:textColor">@color/bc_petal_text</item>
+        <item name="android:textSize">@dimen/bc_text_meta</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:focusable">true</item>
+        <item name="android:focusableInTouchMode">false</item>
+        <item name="android:clickable">true</item>
+        <item name="android:stateListAnimator">@null</item>
+    </style>
 </resources>

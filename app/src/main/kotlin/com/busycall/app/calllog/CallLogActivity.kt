@@ -70,9 +70,10 @@ class CallLogActivity : FlipBaseActivity() {
 
     private fun focusedRow(): CallLogRow? = currentFocus?.getTag(R.id.bc_list) as? CallLogRow
 
+    /** Options: only what isn't on screen (owner, 2026-11-20): Call back and Delete for the focused call. */
     override fun optionsItems(): List<MenuItem> {
         val row = focusedRow() ?: return emptyList()
-        return rowActions(row)
+        return rowActions(row).let { listOf(it.first(), it.last()) }
     }
 
     override fun onCallKey() {

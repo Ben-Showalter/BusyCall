@@ -67,8 +67,8 @@ class SetupFoundActivity : FlipBaseActivity() {
         save.post { save.requestFocus() }
     }
 
+    // Options holds only what isn't on screen (owner, 2026-11-20): Save and connect is a button.
     override fun optionsItems(): List<MenuItem> = listOf(
-        MenuItem(getString(R.string.bc_save_connect)) { saveAndConnect() },
         MenuItem(getString(R.string.bc_found_edit)) { editInFull() },
     )
 

@@ -71,8 +71,8 @@ class NumbersActivity : FlipBaseActivity() {
         super.onPause()
     }
 
+    // Options holds only what isn't on screen (owner, 2026-11-20): "+ Add a number" is a row.
     override fun optionsItems(): List<MenuItem> = listOf(
-        MenuItem(getString(R.string.bc_numbers_add)) { showAddMenu() },
         MenuItem(getString(R.string.bc_menu_settings)) { startActivity(Intent(this, SettingsActivity::class.java)) },
     )
 
