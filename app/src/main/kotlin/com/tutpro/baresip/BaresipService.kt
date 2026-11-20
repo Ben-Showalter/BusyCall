@@ -311,7 +311,7 @@ class BaresipService: Service() {
                 if (intent.action == Intent.ACTION_AIRPLANE_MODE_CHANGED) {
                     val isAirplaneModeOn = intent.getBooleanExtra("state", false)
                     Log.d(TAG, "Airplane mode changed: $isAirplaneModeOn")
-                    if (VERSION.SDK_INT >= 29) updateMobileStatus()
+                    if (VERSION.SDK_INT >= 28) updateMobileStatus() // BusyCall: was 29
                 }
             }
         }
@@ -327,7 +327,7 @@ class BaresipService: Service() {
             override fun onReceive(ctx: Context, intent: Intent) {
                 if (intent.action == "android.intent.action.SIM_STATE_CHANGED") {
                     Log.d(TAG, "SIM state changed")
-                    if (VERSION.SDK_INT >= 29) {
+                    if (VERSION.SDK_INT >= 28) { // BusyCall: was 29
                         if (isSimReady())
                             Handler(Looper.getMainLooper()).postDelayed({
                                 addMobileUserAgent()
@@ -976,7 +976,7 @@ class BaresipService: Service() {
 
             if (!aecAvailable) toast(getString(R.string.no_aec), Toast.LENGTH_LONG)
 
-            if (VERSION.SDK_INT >= 29 && isNativeReady) {
+            if (VERSION.SDK_INT >= 28 && isNativeReady) { // BusyCall: was 29
                 addMobileUserAgent()
             }
         }
@@ -1023,14 +1023,13 @@ class BaresipService: Service() {
 
             var removeMobile = false
             if (ua.account.isMobile) {
-                if (VERSION.SDK_INT < 29) {
-                    Log.d(TAG, "Removing Mobile account on API < 29")
+                if (VERSION.SDK_INT < 28) { // BusyCall: was 29
+                    Log.d(TAG, "Removing Mobile account on API < 28")
                     removeMobile = true
                 }
                 else {
-                    val roleManager = getSystemService(ROLE_SERVICE) as RoleManager
-                    val hasDialerRole = roleManager.isRoleHeld(RoleManager.ROLE_DIALER)
-                    val hasSmsRole = roleManager.isRoleHeld(RoleManager.ROLE_SMS)
+                    val hasDialerRole = hasRole(RoleManager.ROLE_DIALER) // BusyCall: also on Android 9
+                    val hasSmsRole = hasRole(RoleManager.ROLE_SMS)
                     if (!isSimReady() ||
                             SubscriptionManager.getDefaultVoiceSubscriptionId() ==
                                 SubscriptionManager.INVALID_SUBSCRIPTION_ID ||
@@ -1055,7 +1054,7 @@ class BaresipService: Service() {
 
             ua.status = if (ua.account.isMobile) {
                 val isAirplaneModeOn = Utils.isAirplaneModeOn(this)
-                if (VERSION.SDK_INT >= 29) {
+                if (VERSION.SDK_INT >= 28) { // BusyCall: was 29
                     if (isAirplaneModeOn)
                         R.drawable.circle_white
                     else
@@ -1988,7 +1987,7 @@ class BaresipService: Service() {
             Message.save()
             Blocked.save()
             BlockRule.save()
-            if (VERSION.SDK_INT >= 29) updateMobileStatus()
+            if (VERSION.SDK_INT >= 28) updateMobileStatus() // BusyCall: was 29
 
             val mobileUa = uas.value.find { it.account.isMobile }
             if (mobileUa != null)
@@ -2550,13 +2549,12 @@ class BaresipService: Service() {
     }
 
     fun addMobileUserAgent() {
-        if (VERSION.SDK_INT >= 29) {
+        if (VERSION.SDK_INT >= 28) { // BusyCall: was 29
 
             val isSimReady = isSimReady()
             val voiceSubId = SubscriptionManager.getDefaultVoiceSubscriptionId()
-            val roleManager = getSystemService(ROLE_SERVICE) as RoleManager
-            val hasDialerRole = roleManager.isRoleHeld(RoleManager.ROLE_DIALER)
-            val hasSmsRole = roleManager.isRoleHeld(RoleManager.ROLE_SMS)
+            val hasDialerRole = hasRole(RoleManager.ROLE_DIALER) // BusyCall: also on Android 9
+            val hasSmsRole = hasRole(RoleManager.ROLE_SMS)
             mobileNumber = Utils.getLine1Number(this, voiceSubId) ?: ""
             val existingMobileUa = uas.value.find {
                 it.account.isMobile || Utils.uriMatch(it.account.aor, "sip:mobile@pstn")
@@ -2633,11 +2631,10 @@ class BaresipService: Service() {
         Handler(Looper.getMainLooper()).post { Toast.makeText(this, message, length).show() }
     }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
+    @RequiresApi(Build.VERSION_CODES.P) // BusyCall: was Q
     private fun updateMobileStatus(newStatus: Int? = null) {
-        val roleManager = getSystemService(ROLE_SERVICE) as RoleManager
-        val hasDialerRole = roleManager.isRoleHeld(RoleManager.ROLE_DIALER)
-        val hasSmsRole = roleManager.isRoleHeld(RoleManager.ROLE_SMS)
+        val hasDialerRole = hasRole(RoleManager.ROLE_DIALER) // BusyCall: also on Android 9
+        val hasSmsRole = hasRole(RoleManager.ROLE_SMS)
         val hasRole = hasDialerRole || hasSmsRole
         val isSimReady = isSimReady()
         val voiceSubId = SubscriptionManager.getDefaultVoiceSubscriptionId()
@@ -2668,15 +2665,23 @@ class BaresipService: Service() {
         }
     }
 
+    // BusyCall: default-app checks that also work on Android 9 (RoleManager is Android 10+).
+    private fun hasRole(role: String): Boolean = if (VERSION.SDK_INT >= 29)
+        (getSystemService(ROLE_SERVICE) as RoleManager).isRoleHeld(role)
+    else when (role) {
+        RoleManager.ROLE_DIALER -> (getSystemService(TELECOM_SERVICE) as TelecomManager).defaultDialerPackage == packageName
+        RoleManager.ROLE_SMS -> android.provider.Telephony.Sms.getDefaultSmsPackage(this) == packageName
+        else -> false
+    }
+
     private fun updateMobileStatusFromServiceState(state: Int) {
         if (state == previousMobileServiceState) return
         previousMobileServiceState = state
-        if (VERSION.SDK_INT >= 29) {
+        if (VERSION.SDK_INT >= 28) { // BusyCall: was 29
             val isAirplaneModeOn = Utils.isAirplaneModeOn(this)
             val isSimReady = isSimReady()
-            val roleManager = getSystemService(ROLE_SERVICE) as RoleManager
-            val isDefaultDialer = roleManager.isRoleHeld(RoleManager.ROLE_DIALER)
-            val hasSmsRole = roleManager.isRoleHeld(RoleManager.ROLE_SMS)
+            val isDefaultDialer = hasRole(RoleManager.ROLE_DIALER) // BusyCall: also on Android 9
+            val hasSmsRole = hasRole(RoleManager.ROLE_SMS)
             val hasRole = isDefaultDialer || hasSmsRole
             val voiceCapable = if (VERSION.SDK_INT >= 35)
                 telephonyManager.isDeviceVoiceCapable
