@@ -66,6 +66,17 @@
                 android:minHeight="48dp"
                 android:text="@string/bc_dialer_call" />
 
+            <!-- Only for an emergency number: where the call will go out. -->
+            <TextView
+                android:id="@+id/bc_dialer_emergency"
+                style="@style/BcText.Meta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:maxLines="3"
+                android:paddingTop="4dp"
+                android:visibility="gone" />
+
             <TextView
                 android:id="@+id/bc_dialer_error"
                 style="@style/BcText"

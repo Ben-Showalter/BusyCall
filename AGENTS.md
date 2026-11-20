@@ -196,6 +196,11 @@ The full key table is `PLAN.md §3.1`. In code:
   call screens. `CALL_PHONE` / `READ_PHONE_STATE` are asked only at that moment.
   Never write SIM call handling of our own, and always offer the way back
   (Android's default-apps screen).
+- **Emergency numbers** (owner, 2026-11-20) go out on the phone network, never through
+  Call from… or ★. Only with **no cell service at all** do they go out over a connected VoIP
+  number, at once, with "Tell them where you are" on screen. The rule is
+  `bridge/Emergency` (pure, tested); `placeCall` refuses an emergency number on a SIP number
+  while there is cell service, and transfers to one are refused.
 
 ## 6a. Setup codes (PLAN §5.1)
 

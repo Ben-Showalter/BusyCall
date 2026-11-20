@@ -294,6 +294,20 @@
     <string name="bc_dialer_phone_busy">A phone call is in progress. Finish it first.</string>
     <string name="bc_dialer_failed">The call couldn\'t be started. Check the number\'s connection, then try again.</string>
 
+    <!-- Emergency numbers (911, 112…): the phone network first, VoIP only with no cell service. -->
+    <!-- The Dialer's Call button while the typed number is an emergency number. -->
+    <string name="bc_emergency_call">Emergency call</string>
+    <!-- Under the Call button: where the emergency call will go out. -->
+    <string name="bc_emergency_hint_phone">On the phone network</string>
+    <!-- Under the Call button with no cell service. %1$s = "Office", %2$s = "104". -->
+    <string name="bc_emergency_hint_voip">No cell service: over %1$s · %2$s. Tell them where you are.</string>
+    <!-- Shown as the call starts over VoIP. %1$s = "911", %2$s = "Office", %3$s = "104". -->
+    <string name="bc_emergency_over_voip">No cell service: calling %1$s over %2$s · %3$s. Tell them where you are.</string>
+    <!-- In call, under the name, on an emergency call over VoIP (the location may not reach them). -->
+    <string name="bc_emergency_tell_location">Tell them where you are</string>
+    <string name="bc_emergency_phone_network">Emergency calls go out on the phone network. Call from the Dialer.</string>
+    <string name="bc_emergency_no_transfer">A call can\'t be transferred to an emergency number.</string>
+
     <!-- S3 Contacts -->
     <string name="bc_contacts_title">Contacts</string>
     <!-- Under a contact's name on its numbers card. -->

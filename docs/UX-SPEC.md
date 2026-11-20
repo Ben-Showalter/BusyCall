@@ -123,6 +123,12 @@ Menus and confirmations are `AlertDialog`s drawn as a rounded dark card with an 
   (2=ABC … 9=WXYZ, accents folded), or whose number contains 3+ typed digits; call-log numbers
   too. First-name matches first, then later words, then numbers. Each number is its own row:
   `Name` / `Mobile · +15550198`, the matched part underlined. ▼ moves into them.
+- **Emergency numbers** (Android's list for the SIM's country, e.g. 911, 112): the button reads
+  **Emergency call**, with a line under it: "On the phone network", or with no cell service at
+  all "No cell service: over Office · 104. Tell them where you are." OK/CALL (short or held) then
+  skips the picker and ★: the phone network (BusyCall's call screen when it is the phone's
+  dialer, else the phone's dialer with the number filled in), or at once over that VoIP number.
+  Transfer to an emergency number is refused; "Add a call" to one follows the same rule.
 - **Options:** Clear number.
 
 ## S3 Contacts (`contacts/ContactsActivity`)
@@ -180,5 +186,6 @@ Menus and confirmations are `AlertDialog`s drawn as a rounded dark card with an 
   leaves the screen; the call goes on (the On-call bar shows elsewhere).
 - The on-screen End stays in the app: back to the other call if there is one, else the screen
   before. Every petal is also tappable.
+- An emergency call over VoIP (no cell service) shows "Tell them where you are" in red under the name.
 - If a placed call never appears within 10 s: "The call didn't start…" and the screen closes.
 - **Softkey:** "Home" (the phone's home screen; the call carries on). No Options menu.

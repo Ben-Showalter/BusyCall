@@ -89,6 +89,17 @@ class FakeBridge(
     override fun startSimCalls(activity: Activity): Boolean = true
     override fun sim() = simUi
 
+    var emergencyNumbers = setOf("911", "112")
+    var cell = com.busycall.app.bridge.CellState.InService
+    var emergencyPlaced = mutableListOf<String>()
+    override fun isEmergencyNumber(ctx: android.content.Context, dial: String) =
+        com.busycall.app.bridge.Emergency.isEmergency(dial) { it in emergencyNumbers }
+    override fun cellState(ctx: android.content.Context) = cell
+    override fun placeEmergencyCall(activity: Activity, dial: String): Boolean {
+        if (!defaultPhoneApp) return false
+        emergencyPlaced.add(dial); return true
+    }
+
     var connectResult = com.busycall.app.bridge.ConnectResult.Connected
     override fun connectCalls(callIdA: Long, callIdB: Long): com.busycall.app.bridge.ConnectResult {
         connected.add(callIdA to callIdB); return connectResult

@@ -111,7 +111,11 @@ enum class ConnectResult {
 }
 
 /** Why a call couldn't be placed; each maps to a plain-language message. */
-enum class PlaceProblem { ServiceNotRunning, NoNumber, InvalidAddress, PhoneBusy, Failed }
+enum class PlaceProblem {
+    ServiceNotRunning, NoNumber, InvalidAddress, PhoneBusy, Failed,
+    /** An emergency number while the phone network is there: it must go out there (Emergency). */
+    Emergency,
+}
 
 sealed class PlaceResult {
     object Placed : PlaceResult()
@@ -280,6 +284,21 @@ interface Bridge {
 
     /** The SIM while SIM calls run through BusyCall, else null. */
     fun sim(): SimUi?
+
+    // ---- Emergency numbers (Emergency: phone network first, VoIP with no cell service) ----
+
+    /** True when [dial] is an emergency number where the phone is (Android's list for the SIM's country). */
+    fun isEmergencyNumber(ctx: android.content.Context, dial: String): Boolean
+
+    /** The phone's cell connection right now. */
+    fun cellState(ctx: android.content.Context): CellState
+
+    /**
+     * Places an emergency call on the phone network while BusyCall is the phone's dialer
+     * (upstream's InCallService then shows it on BusyCall's call screen). False when BusyCall
+     * isn't the dialer, or Android refused: the caller opens the phone's own dialer instead.
+     */
+    fun placeEmergencyCall(activity: Activity, dial: String): Boolean
 
     // ---- Call blocking (BusyCall's CallFilter through upstream's callFilter hook) ----
 

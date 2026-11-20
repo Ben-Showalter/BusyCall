@@ -9,7 +9,12 @@ import android.os.Build
 import android.media.AudioManager
 import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.telecom.TelecomManager
+import android.telephony.PhoneNumberUtils
+import android.telephony.PhoneStateListener
+import android.telephony.ServiceState
+import android.telephony.TelephonyManager
 import android.util.Log
 import com.busycall.app.data.Prefs
 import com.tutpro.baresip.Account
@@ -82,6 +87,8 @@ object BaresipBridge : Bridge {
         requiredPermissions().filter { ctx.checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
 
     override fun startService(activity: Activity) {
+        // Know the cell connection before anyone dials an emergency number.
+        if (activity.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) watchCell(activity)
         val missing = missingPermissions(activity)
         if (missing.isNotEmpty()) {
             // The activity calls startService() again from onRequestPermissionsResult.
@@ -435,6 +442,10 @@ object BaresipBridge : Bridge {
     override fun placeCall(activity: Activity, fromId: String?, dial: String, holdCallId: Long?): PlaceResult {
         if (!isRunning()) return PlaceResult.Failed(PlaceProblem.ServiceNotRunning)
         if (fromId != null && fromId == sim()?.id) return placeSimCall(activity, dial)
+        // Last guard: an emergency number goes out on a SIP number only with no cell service.
+        if (isEmergencyNumber(activity, dial) && !Emergency.allowsVoip(cellState(activity), numbers())) {
+            return PlaceResult.Failed(PlaceProblem.Emergency)
+        }
         // A second call goes out on the same number as the held one.
         val held = holdCallId?.let { Call.ofCallp(it) }
         val ua = held?.ua ?: (fromId?.let { agentOf(it) } ?: sipAgents().firstOrNull())
@@ -501,6 +512,65 @@ object BaresipBridge : Bridge {
         }
     }
 
+    // ---- Emergency numbers ----
+
+    override fun isEmergencyNumber(ctx: Context, dial: String): Boolean =
+        Emergency.isEmergency(dial) { number ->
+            if (Build.VERSION.SDK_INT >= 29) {
+                (ctx.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager).isEmergencyNumber(number)
+            } else {
+                @Suppress("DEPRECATION") PhoneNumberUtils.isEmergencyNumber(number)
+            }
+        }
+
+    @Volatile
+    private var serviceState: Int? = null
+    private var cellListener: PhoneStateListener? = null
+
+    /** Starts listening to the cell connection (no permission needed for this). Main thread only. */
+    private fun watchCell(ctx: Context) {
+        if (cellListener != null) return
+        val tm = ctx.applicationContext.getSystemService(Context.TELEPHONY_SERVICE) as? TelephonyManager ?: return
+        val listener = object : PhoneStateListener() {
+            override fun onServiceStateChanged(state: ServiceState?) {
+                serviceState = state?.state
+            }
+        }
+        try {
+            tm.listen(listener, PhoneStateListener.LISTEN_SERVICE_STATE)
+            cellListener = listener
+        } catch (e: Exception) {
+            Log.e(TAG, "Cell listener failed: ${e.javaClass.simpleName}")
+        }
+    }
+
+    override fun cellState(ctx: Context): CellState {
+        if (!ctx.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) return CellState.NoRadio
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) watchCell(ctx)
+        val airplane = Settings.Global.getInt(ctx.contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0
+        if (airplane) return CellState.RadioOff
+        return when (serviceState) {
+            ServiceState.STATE_IN_SERVICE -> CellState.InService
+            ServiceState.STATE_EMERGENCY_ONLY -> CellState.EmergencyOnly
+            ServiceState.STATE_POWER_OFF -> CellState.RadioOff
+            ServiceState.STATE_OUT_OF_SERVICE -> CellState.NoService
+            else -> CellState.Unknown
+        }
+    }
+
+    override fun placeEmergencyCall(activity: Activity, dial: String): Boolean {
+        if (!isDefaultPhoneApp(activity)) return false
+        val number = Emergency.digitsOf(dial)
+        return try {
+            val tm = activity.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
+            tm.placeCall(Uri.fromParts("tel", number, null), Bundle())
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Emergency placeCall failed: ${e.javaClass.simpleName}")
+            false
+        }
+    }
+
     // ---- BusyCall as the phone's dialer ----
 
     private val phonePermissions: Array<String>
@@ -546,6 +616,8 @@ object BaresipBridge : Bridge {
 
     override fun transfer(callId: Long, dial: String): Boolean {
         val call = Call.ofCallp(callId) ?: return false
+        // Never hand someone else's call to an emergency number.
+        BaresipService.instance?.let { if (isEmergencyNumber(it, dial)) return false }
         val uri = addressFor(call.ua, dial) ?: return false
         // Upstream's blind transfer: holds the call, then REFERs it (Call.transfer).
         return call.transfer(uri)

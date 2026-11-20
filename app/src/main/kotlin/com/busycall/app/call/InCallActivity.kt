@@ -260,6 +260,10 @@ class InCallActivity : FlipBaseActivity() {
         name.text = call.peerName
         val shownNumber = CallText.number(call.peerUri)
         number.text = if (shownNumber == call.peerName) "" else shownNumber
+        // An emergency call over VoIP (no cell service): the location may not reach them.
+        val voipEmergency = !call.incoming && !call.isSim && Bridges.current.isEmergencyNumber(this, call.peerUri)
+        if (voipEmergency) number.text = getString(R.string.bc_emergency_tell_location)
+        number.setTextColor(getColor(if (voipEmergency) R.color.bc_text_alert else R.color.bc_text_muted))
         number.visibility = if (number.text.isEmpty()) View.GONE else View.VISIBLE
         val o = state.other
         other.text = if (o == null) "" else getString(

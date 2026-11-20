@@ -47,7 +47,18 @@ _Built 2026-11-20, not tested yet._ Settings › Use for phone (SIM) calls. Reco
    after a reboot. **Risk:** upstream's InCallService forwards a call only if its service is
    running; a lost call here means adding a small pending-call queue to the fork patch.
 3. A SIM call out from Call from… › Phone (SIM).
-4. 911: carrier test procedure only. Emergency calls always work from the lock screen.
+4. Emergency numbers (BusyCall's rule: the phone network, VoIP only with no cell service).
+   **Never call 911 just to test.** Ask the local police non-emergency line first; on the call,
+   say "This is a test call" right away; if you dial it by mistake, don't hang up, explain.
+   Many carriers have `933`, which reads back the address on file. It isn't an emergency
+   number to Android, so call it from Call from… › Phone (SIM) and from the VoIP number.
+   - Type 911 (don't call): the button reads "Emergency call", "On the phone network" under it.
+   - An arranged test call with cell service: it goes out on the SIM, audio both ways.
+   - VoIP fallback: somewhere with no coverage (or SIM out *and* no tower; with no SIM Android
+     often still reaches a tower, "emergency calls only", and then uses it): the hint reads
+     "No cell service: over Office · 104", the call goes out there, the call screen says
+     "Tell them where you are". Check with the UCM admin first (PBX-NOTES).
+   - Emergency calls still work from the lock screen.
 5. CALL/END and the stock launcher's digit keys with BusyCall as the dialer.
 6. Switch back to the stock dialer; everything works again.
 

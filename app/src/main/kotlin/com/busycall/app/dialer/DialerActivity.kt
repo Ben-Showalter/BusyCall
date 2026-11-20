@@ -12,6 +12,7 @@ import android.widget.TextView
 import android.content.Intent
 import android.widget.Toast
 import com.busycall.app.bridge.Bridges
+import com.busycall.app.bridge.EmergencyRoute
 import com.busycall.app.bridge.PlaceResult
 import com.busycall.app.call.Calling
 import com.busycall.app.call.InCallActivity
@@ -59,6 +60,8 @@ class DialerActivity : FlipBaseActivity() {
     private var holdCallId: Long? = null
     /** "Transfer to": OK/CALL sends that call to the number instead of calling. */
     private var transferCallId: Long? = null
+    private lateinit var callButton: TextView
+    private lateinit var emergencyHint: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,7 +80,8 @@ class DialerActivity : FlipBaseActivity() {
         error = findViewById(R.id.bc_dialer_error)
         matchList = findViewById(R.id.bc_dialer_matches)
         number.setOnClickListener { call(null, held = false) }
-        val callButton = findViewById<TextView>(R.id.bc_dialer_call)
+        callButton = findViewById(R.id.bc_dialer_call)
+        emergencyHint = findViewById(R.id.bc_dialer_emergency)
         callButton.paint.isFakeBoldText = true
         callButton.setOnClickListener { call(null, held = false) }
         intent.getStringExtra(EXTRA_NUMBER)?.let { viewModel.setNumber(it) }
@@ -128,6 +132,11 @@ class DialerActivity : FlipBaseActivity() {
         val target = viewModel.target(match)
         val transferId = transferCallId
         val holdId = holdCallId
+        val emergency = target is DialTarget.Dial && Bridges.current.isEmergencyNumber(this, target.dial)
+        if (emergency && transferId != null) {
+            showError(getString(R.string.bc_emergency_no_transfer))
+            return
+        }
         if (target is DialTarget.Dial && transferId != null) {
             // Blind transfer (owner, 2026-11-20): no Call from… picker; the call ends when it's done.
             if (Bridges.current.transfer(transferId, target.dial)) {
@@ -138,7 +147,8 @@ class DialerActivity : FlipBaseActivity() {
             }
             return
         }
-        if (target is DialTarget.Dial && holdId != null) {
+        // An emergency number from "Add a call" follows the emergency rules, not the held call's number.
+        if (target is DialTarget.Dial && holdId != null && !emergency) {
             when (val result = Bridges.current.placeCall(this, null, target.dial, holdCallId = holdId)) {
                 PlaceResult.Placed -> {
                     startActivity(Intent(this, InCallActivity::class.java)
@@ -167,7 +177,21 @@ class DialerActivity : FlipBaseActivity() {
 
     private fun render() {
         number.text = viewModel.state().number
+        renderEmergency()
         updateMatches()
+    }
+
+    /** While the typed number is an emergency number: "Emergency call" and where it goes out. */
+    private fun renderEmergency() {
+        val typed = viewModel.number
+        val emergency = typed.isNotEmpty() && Bridges.current.isEmergencyNumber(this, typed)
+        callButton.setText(if (emergency) R.string.bc_emergency_call else R.string.bc_dialer_call)
+        emergencyHint.visibility = if (emergency) View.VISIBLE else View.GONE
+        if (!emergency) return
+        emergencyHint.text = when (val route = Calling.emergencyRoute(this)) {
+            is EmergencyRoute.Voip -> getString(R.string.bc_emergency_hint_voip, route.number.label, route.number.number)
+            EmergencyRoute.PhoneNetwork -> getString(R.string.bc_emergency_hint_phone)
+        }
     }
 
     /** Asks the worker for the matches of the current number; shows them if it hasn't changed since. */

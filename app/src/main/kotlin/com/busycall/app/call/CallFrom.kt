@@ -8,6 +8,8 @@ import android.net.Uri
 import android.widget.Toast
 import com.busycall.app.bridge.Bridge
 import com.busycall.app.bridge.Bridges
+import com.busycall.app.bridge.EmergencyRoute
+import com.busycall.app.bridge.Emergency
 import com.busycall.app.bridge.NumberStatus
 import com.busycall.app.bridge.PlaceProblem
 import com.busycall.app.bridge.PlaceResult
@@ -79,6 +81,10 @@ object Calling {
         onPlaced: () -> Unit = {},
         onProblem: (String) -> Unit = { Toast.makeText(activity, it, Toast.LENGTH_LONG).show() },
     ) {
+        if (Bridges.current.isEmergencyNumber(activity, dial)) {
+            emergency(activity, dial, onPlaced, onProblem)
+            return
+        }
         val hasTelephony = activity.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)
         val choices = CallFromDecision.choices(Bridges.current, hasTelephony)
         when (val step = CallFromDecision.decide(held, choices, callBackFrom)) {
@@ -92,6 +98,45 @@ object Calling {
                 },
                 message = activity.getString(R.string.bc_callfrom_tip),
             )
+        }
+    }
+
+    /** Where an emergency call would go out now (for the Dialer's hint and for [start]). */
+    fun emergencyRoute(activity: Activity): EmergencyRoute {
+        val bridge = Bridges.current
+        return Emergency.route(bridge.cellState(activity), if (bridge.isRunning()) bridge.numbers() else emptyList())
+    }
+
+    /**
+     * An emergency number: no picker and no ★ (owner, 2026-11-20). The phone network while there
+     * is any cell service; with none, right away over a connected VoIP number.
+     */
+    private fun emergency(activity: Activity, dial: String, onPlaced: () -> Unit, onProblem: (String) -> Unit) {
+        when (val route = emergencyRoute(activity)) {
+            is EmergencyRoute.Voip -> {
+                val n = route.number
+                Toast.makeText(
+                    activity,
+                    activity.getString(R.string.bc_emergency_over_voip, Emergency.digitsOf(dial), n.label, n.number),
+                    Toast.LENGTH_LONG,
+                ).show()
+                place(activity, FromChoice(n.id, n.label, n.number, n.status), dial, onPlaced, onProblem)
+            }
+            EmergencyRoute.PhoneNetwork -> {
+                if (Bridges.current.placeEmergencyCall(activity, dial)) {
+                    // BusyCall is the dialer: upstream's InCallService shows the call on our screen.
+                    activity.startActivity(Intent(activity, InCallActivity::class.java)
+                        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+                    onPlaced()
+                    return
+                }
+                // The phone's own dialer, number filled in: one press of CALL there.
+                try {
+                    activity.startActivity(Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", Emergency.digitsOf(dial), null)))
+                } catch (e: ActivityNotFoundException) {
+                    onProblem(activity.getString(R.string.bc_sim_no_dialer))
+                }
+            }
         }
     }
 
@@ -134,5 +179,6 @@ object Calling {
         PlaceProblem.InvalidAddress -> R.string.bc_dialer_invalid
         PlaceProblem.PhoneBusy -> R.string.bc_dialer_phone_busy
         PlaceProblem.Failed -> R.string.bc_dialer_failed
+        PlaceProblem.Emergency -> R.string.bc_emergency_phone_network
     }
 }

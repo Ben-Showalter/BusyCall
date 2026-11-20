@@ -48,6 +48,15 @@ the caller holds, BusyCall calls 700, the system announces the slot (e.g. 701) t
 ("Park") connects the two (upstream's attended transfer), leaving the caller in the slot.
 Anyone dials the slot number to pick it up. The park number is a per-number setting.
 
+## Emergency calls over VoIP (all systems)
+BusyCall sends emergency numbers (911, 112, … as Android lists them for the SIM's country) on the
+phone network, and over a VoIP number **only when there is no cell service at all** (then the ★
+number if it's connected, else the first connected one). For that fallback to help, the phone
+system must route 911 to a trunk that delivers an emergency address for the extension (US:
+Kari's Law and RAY BAUM'S Act; a "dispatchable location"). Grandstream UCM: Call Features ›
+Emergency Calls, with the trunk's E911 address set at the provider. Through RemoteConnect the
+caller may be far from that address, which is why the call screen says "Tell them where you are".
+
 ## Blocked calls and voicemail (all systems)
 BusyCall's blocking rejects a call the way upstream does: SIP calls get "486 Busy Here", SIM calls
 are declined. Whether the caller then reaches voicemail is the phone system's or carrier's busy
