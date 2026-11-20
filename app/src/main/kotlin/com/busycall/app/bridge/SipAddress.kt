@@ -58,6 +58,19 @@ object SipAddress {
         return Parts(user, host, port, transport)
     }
 
+    private val stunRegex = Regex("^stuns?:([A-Za-z0-9]([A-Za-z0-9-]{0,62})?(\\.[A-Za-z0-9]([A-Za-z0-9-]{0,62})?)*|\\[[0-9A-Fa-f:.]+])(:[0-9]{1,5})?$")
+
+    /**
+     * A STUN server as baresip wants it: `nat-a.gdms.cloud` → `stun:nat-a.gdms.cloud`; a
+     * `stun:`/`stuns:` URI is kept. Null if it isn't a valid host (and optional port).
+     */
+    fun stunUri(server: String): String? {
+        val s = server.trim()
+        if (s.isEmpty()) return null
+        val uri = if (s.startsWith("stun:", true) || s.startsWith("stuns:", true)) s else "stun:$s"
+        return uri.takeIf { stunRegex.matches(it) }
+    }
+
     /**
      * Gives a call address on the number's own server the port and transport the number signs
      * in with. Upstream builds `sip:*97@host` from the host alone (Utils.uriComplete/telToSip),

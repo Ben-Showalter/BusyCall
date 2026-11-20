@@ -52,6 +52,8 @@ class SetupFoundActivity : FlipBaseActivity() {
                 if (draft.password.isEmpty()) getString(R.string.bc_found_no_password) else "••••••••",
             ),
             getString(R.string.bc_field_connection) to Words.transport(this, draft.transport),
+        ) + if (draft.nat == com.busycall.app.bridge.NatMode.Off) emptyList() else listOf(
+            getString(R.string.bc_field_nat) to getString(R.string.bc_found_nat_value, draft.nat.param.uppercase(), draft.stunServer),
         )
         Rows.fill(list, lines) { row, title, subtitle, _, line ->
             // Caption above, value below (the row's title/subtitle order swapped for this screen).

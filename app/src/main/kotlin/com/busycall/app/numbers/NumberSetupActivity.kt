@@ -8,6 +8,7 @@ import android.view.View
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import com.busycall.app.bridge.NatMode
 import com.busycall.app.bridge.NumberDraft
 import com.busycall.app.bridge.PlusRule
 import com.busycall.app.bridge.SaveProblem
@@ -44,6 +45,10 @@ class NumberSetupActivity : FlipBaseActivity() {
     private lateinit var voicemail: EditText
     private lateinit var transportValue: TextView
     private lateinit var plusValue: TextView
+    private lateinit var natValue: TextView
+    private lateinit var stun: EditText
+    private lateinit var stunLabel: TextView
+    private var nat = NatMode.Off
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,6 +66,9 @@ class NumberSetupActivity : FlipBaseActivity() {
         voicemail = findViewById(R.id.bc_setup_voicemail)
         transportValue = findViewById(R.id.bc_setup_transport_value)
         plusValue = findViewById(R.id.bc_setup_plus_value)
+        natValue = findViewById(R.id.bc_setup_nat_value)
+        stun = findViewById(R.id.bc_setup_stun)
+        stunLabel = findViewById(R.id.bc_setup_stun_label)
 
         val draft = viewModel.start(editId, DraftExtras.get(intent))
         name.setText(draft.name)
@@ -74,22 +82,20 @@ class NumberSetupActivity : FlipBaseActivity() {
         showTransport()
         plusRule = draft.plusRule
         showPlusRule()
+        nat = draft.nat
+        stun.setText(draft.stunServer)
+        showNat()
         // Editing: an empty password means "keep the saved one".
         findViewById<View>(R.id.bc_setup_password_note).visibility =
             if (editId != null && draft.password.isEmpty()) View.VISIBLE else View.GONE
 
-        // The keypad has no dot: in the server field `*` types "." (guide §3, IP fields).
-        server.setOnKeyListener { _, _, event ->
-            val key = KeyRouter.route(event.keyCode, event.scanCode)
-            if (key == LogicalKey.Digit('*') && event.action == KeyEvent.ACTION_DOWN) {
-                val at = server.selectionStart.coerceAtLeast(0)
-                server.text.insert(at, ".")
-                true
-            } else key == LogicalKey.Digit('*') // swallow the matching UP
-        }
+        // The keypad has no dot: in the server fields `*` types "." (guide §3, IP fields).
+        starTypesDot(server)
+        starTypesDot(stun)
 
         findViewById<View>(R.id.bc_setup_transport).setOnClickListener { chooseTransport() }
         findViewById<View>(R.id.bc_setup_plus).setOnClickListener { choosePlusRule() }
+        findViewById<View>(R.id.bc_setup_nat).setOnClickListener { chooseNat() }
         findViewById<View>(R.id.bc_setup_save).setOnClickListener { save() }
         findViewById<View>(R.id.bc_setup_more).setOnClickListener { openOptions() }
         findViewById<TextView>(R.id.bc_setup_save).paint.isFakeBoldText = true
@@ -111,7 +117,46 @@ class NumberSetupActivity : FlipBaseActivity() {
         },
         MenuItem(getString(R.string.bc_field_connection)) { chooseTransport() },
         MenuItem(getString(R.string.bc_field_plus)) { choosePlusRule() },
+        MenuItem(getString(R.string.bc_field_nat)) { chooseNat() },
     )
+
+    private fun starTypesDot(field: EditText) {
+        field.setOnKeyListener { _, _, event ->
+            val key = KeyRouter.route(event.keyCode, event.scanCode)
+            if (key == LogicalKey.Digit('*') && event.action == KeyEvent.ACTION_DOWN) {
+                val at = field.selectionStart.coerceAtLeast(0)
+                field.text.insert(at, ".")
+                true
+            } else key == LogicalKey.Digit('*') // swallow the matching UP
+        }
+    }
+
+    /** Network help for call audio (upstream's medianat): Off · STUN · ICE. */
+    private fun chooseNat() {
+        val pick = { mode: NatMode ->
+            nat = mode
+            showNat()
+            if (mode != NatMode.Off) stun.post { stun.requestFocus() }
+        }
+        Menus.show(this, getString(R.string.bc_field_nat), listOf(
+            MenuItem(getString(R.string.bc_nat_off), getString(R.string.bc_nat_off_sub)) { pick(NatMode.Off) },
+            MenuItem(getString(R.string.bc_nat_stun), getString(R.string.bc_nat_stun_sub)) { pick(NatMode.Stun) },
+            MenuItem(getString(R.string.bc_nat_ice), getString(R.string.bc_nat_ice_sub)) { pick(NatMode.Ice) },
+        ))
+    }
+
+    private fun showNat() {
+        natValue.setText(
+            when (nat) {
+                NatMode.Off -> R.string.bc_nat_off
+                NatMode.Stun -> R.string.bc_nat_stun
+                NatMode.Ice -> R.string.bc_nat_ice
+            }
+        )
+        val shown = if (nat == NatMode.Off) View.GONE else View.VISIBLE
+        stun.visibility = shown
+        stunLabel.visibility = shown
+    }
 
     /** "Numbers starting with +": many phone systems don't route a leading + (docs/PBX-NOTES.md). */
     private fun choosePlusRule() {
@@ -177,6 +222,8 @@ class NumberSetupActivity : FlipBaseActivity() {
         transport = transport,
         voicemail = voicemail.text.toString(),
         plusRule = plusRule,
+        nat = nat,
+        stunServer = stun.text.toString().trim(),
     )
 
     private fun save() {
@@ -202,6 +249,7 @@ class NumberSetupActivity : FlipBaseActivity() {
                 SaveProblem.NameTaken -> R.string.bc_problem_name_taken
                 SaveProblem.AlreadyExists -> R.string.bc_problem_exists
                 SaveProblem.AllocationFailed -> R.string.bc_problem_allocation
+                SaveProblem.InvalidStun -> R.string.bc_problem_stun
             }
         )
         error.visibility = View.VISIBLE
@@ -213,6 +261,7 @@ class NumberSetupActivity : FlipBaseActivity() {
             SetupField.AuthUser -> authUser
             SetupField.Password -> password
             SetupField.Voicemail -> voicemail
+            SetupField.Stun -> stun
             SetupField.None -> findViewById<View>(R.id.bc_setup_save)
         }
         field.requestFocus()

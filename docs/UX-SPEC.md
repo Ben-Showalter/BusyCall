@@ -82,11 +82,12 @@ title (and an optional question under it); the selected row gets the red focus r
 ## S8 Number setup (`numbers/NumberSetupActivity`)
 - **Fields:** Name, Server (`*` types a dot), Port, Extension or username, Password,
   Connection (row → menu UDP/TCP/TLS), **Numbers starting with +** (row → menu: Drop the + (default),
-  Keep the +, Replace + with… a digit prefix such as 011), Auth ID, Voicemail number; **Save and connect**;
+  Keep the +, Replace + with… a digit prefix such as 011), **Network help (NAT)** (row → menu: Off (default), STUN, ICE;
+  when on, a **STUN server** field, `*` types a dot, hint `nat-a.gdms.cloud`), Auth ID, Voicemail number; **Save and connect**;
   **More options…** (opens Options, since the T9 keyboard can take the softkeys).
 - **Editing:** title "Edit number"; an empty password keeps the saved one (note shown).
 - **Errors:** plain words at the top (and a toast), focus moves to the field.
-- **Options:** Show/Hide password · Connection · Numbers starting with +.
+- **Options:** Show/Hide password · Connection · Numbers starting with + · Network help (NAT).
 - Every call from the number applies its + rule to `+` numbers (contacts store `+1 555…`);
   extensions and SIP addresses are never changed.
 

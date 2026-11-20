@@ -2,13 +2,14 @@ package com.busycall.app.numbers
 
 import com.busycall.app.bridge.Bridge
 import com.busycall.app.bridge.Bridges
+import com.busycall.app.bridge.NatMode
 import com.busycall.app.bridge.NumberDraft
 import com.busycall.app.bridge.SaveProblem
 import com.busycall.app.bridge.SaveResult
 import com.busycall.app.bridge.SipAddress
 
 /** Which field a problem belongs to, so the screen can move focus there. */
-enum class SetupField { Name, Server, Port, User, AuthUser, Password, Voicemail, None }
+enum class SetupField { Name, Server, Port, User, AuthUser, Password, Voicemail, Stun, None }
 
 /** Number setup logic (PLAN.md S8); plain class (see HomeViewModel). */
 class NumberSetupViewModel(private val bridge: Bridge = Bridges.current) {
@@ -26,6 +27,7 @@ class NumberSetupViewModel(private val bridge: Bridge = Bridges.current) {
         if (draft.user.isBlank() || !SipAddress.isValidUser(draft.user.trim())) return SaveProblem.InvalidUser
         if (!SipAddress.isValidPassword(draft.password)) return SaveProblem.InvalidPassword
         if (!SipAddress.isValidName(draft.name.trim())) return SaveProblem.InvalidName
+        if (draft.nat != NatMode.Off && SipAddress.stunUri(draft.stunServer) == null) return SaveProblem.InvalidStun
         return null
     }
 
@@ -41,6 +43,7 @@ class NumberSetupViewModel(private val bridge: Bridge = Bridges.current) {
         SaveProblem.InvalidUser -> SetupField.User
         SaveProblem.InvalidPassword -> SetupField.Password
         SaveProblem.InvalidName, SaveProblem.NameTaken -> SetupField.Name
+        SaveProblem.InvalidStun -> SetupField.Stun
         SaveProblem.ServiceNotRunning, SaveProblem.AllocationFailed -> SetupField.None
     }
 }

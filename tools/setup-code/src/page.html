@@ -180,7 +180,10 @@ ol { margin: 0; padding-left: 20px; font-size: 14px; color: var(--muted); }
         <input id="vm" placeholder="*97" spellcheck="false">
       </label>
     </div>
-    <p class="hint">Grandstream UCM: use the extension number, its SIP/IAX password, and the UCM's address. Leave Port empty unless the UCM uses a non-standard port.</p>
+    <label>STUN server (only for remote access)
+      <input id="stun" placeholder="nat-a.gdms.cloud" spellcheck="false">
+    </label>
+    <p class="hint">Grandstream UCM: use the extension number, its SIP/IAX password, and the UCM's address. Leave Port empty unless the UCM uses a non-standard port. Away from the office through UCM RemoteConnect: use its IP Endpoint address and port (5061) with TLS, and its STUN address (nat-a.gdms.cloud).</p>
     <div class="actions">
       <button type="button" id="clear">Clear all</button>
     </div>
@@ -216,7 +219,7 @@ ol { margin: 0; padding-left: 20px; font-size: 14px; color: var(--muted); }
   'use strict';
   qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
 
-  var ids = ['name', 'server', 'port', 'user', 'auth', 'pass', 'transport', 'vm'];
+  var ids = ['name', 'server', 'port', 'user', 'auth', 'pass', 'transport', 'vm', 'stun'];
   var el = {};
   ids.concat(['qr', 'qrLabel', 'link', 'copy', 'png', 'print', 'clear', 'showPass', 'status']).forEach(function (id) {
     el[id] = document.getElementById(id);
@@ -234,7 +237,8 @@ ol { margin: 0; padding-left: 20px; font-size: 14px; color: var(--muted); }
     if (port && !/^\d{1,5}$/.test(port)) return '';
     var parts = [['v', '1'], ['name', value('name')], ['server', server], ['port', port],
                  ['user', user], ['auth', value('auth')], ['pass', el.pass.value],
-                 ['transport', el.transport.value], ['vm', value('vm')]];
+                 ['transport', el.transport.value], ['vm', value('vm')],
+                 ['nat', value('stun') ? 'stun' : ''], ['stun', value('stun')]];
     return 'busycall:add?' + parts
       .filter(function (p) { return p[1] !== ''; })
       .map(function (p) { return p[0] + '=' + encodeURIComponent(p[1]); })

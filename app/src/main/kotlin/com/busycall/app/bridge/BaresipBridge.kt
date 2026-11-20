@@ -189,6 +189,8 @@ object BaresipBridge : Bridge {
                 else -> vm
             },
             plusRule = plusRuleOf(acc.aor),
+            nat = NatMode.fromParam(acc.mediaNat),
+            stunServer = acc.stunServer.removePrefix("stun:"),
         )
     }
 
@@ -203,6 +205,7 @@ object BaresipBridge : Bridge {
         if (draft.password.isNotEmpty() && !Account.checkAuthPass(draft.password)) return SaveProblem.InvalidPassword
         val name = draft.name.trim()
         if (!Account.checkDisplayName(name)) return SaveProblem.InvalidName
+        if (draft.nat != NatMode.Off && SipAddress.stunUri(draft.stunServer) == null) return SaveProblem.InvalidStun
         if (name.isNotEmpty() && sipAgents().any { it.account.nickName == name && it.account.aor != ownId }) {
             return SaveProblem.NameTaken
         }
@@ -225,6 +228,11 @@ object BaresipBridge : Bridge {
             val vm = SipAddress.voicemailUri(draft)
             if (vm.isNotEmpty()) append(";mwi=yes;vm_uri=\"").append(vm).append("\"") else append(";mwi=no")
             append(";regint=").append(REGISTRATION_INTERVAL).append(";regq=0.5;pubint=0")
+            // Network help for call audio, as upstream's Account.print writes it.
+            if (draft.nat != NatMode.Off) {
+                append(";medianat=").append(draft.nat.param)
+                append(";stunserver=\"").append(SipAddress.stunUri(draft.stunServer)).append("\"")
+            }
             val name = draft.name.trim()
             if (name.isNotEmpty()) append(";extra=\"nickname=").append(name).append(";last=empty\"")
         }
@@ -284,6 +292,7 @@ object BaresipBridge : Bridge {
             BaresipService.aorPasswords.remove(acc.aor)
             reRegister = true
         }
+        applyNat(acc, draft)
         Account.saveAccounts()
         savePlusRule(acc.aor, draft.plusRule)
         logPasswordState("updated", acc)
@@ -302,6 +311,17 @@ object BaresipBridge : Bridge {
         Api.ua_destroy(ua.uap)
         Account.saveAccounts()
         Prefs.setPlusRule(id, null, null)
+    }
+
+    /** Network help, set through upstream's own account functions (as its account screen does). */
+    private fun applyNat(acc: Account, draft: NumberDraft) {
+        if (draft.nat.param != acc.mediaNat && Api.account_set_medianat(acc.accp, draft.nat.param) == 0) {
+            acc.mediaNat = Api.account_medianat(acc.accp)
+        }
+        val stun = if (draft.nat == NatMode.Off) "" else SipAddress.stunUri(draft.stunServer).orEmpty()
+        if (stun.isNotEmpty() && stun != acc.stunServer && Api.account_set_stun_uri(acc.accp, stun) == 0) {
+            acc.stunServer = Api.account_stun_uri(acc.accp)
+        }
     }
 
     // "Numbers starting with +", kept in BusyCall's own Prefs per number (no upstream change).

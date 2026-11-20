@@ -293,6 +293,21 @@
     <string name="bc_calllog_call_back">Call back</string>
     <string name="bc_calllog_delete">Delete</string>
 
+    <!-- Number setup: Network help for call audio behind NAT (e.g. Grandstream RemoteConnect). -->
+    <string name="bc_field_nat">Network help (NAT)</string>
+    <!-- On "Setup code found". %1$s mode ("STUN"), %2$s server ("nat-a.gdms.cloud"). -->
+    <string name="bc_found_nat_value">%1$s · %2$s</string>
+    <string name="bc_nat_off">Off</string>
+    <string name="bc_nat_off_sub">The phone and the server can reach each other directly</string>
+    <string name="bc_nat_stun">STUN</string>
+    <string name="bc_nat_stun_sub">Calls connect but you can\'t hear each other (remote access)</string>
+    <string name="bc_nat_ice">ICE</string>
+    <string name="bc_nat_ice_sub">Only if your phone system asks for ICE</string>
+    <string name="bc_field_stun">STUN server (* types a dot)</string>
+    <!-- Example STUN server: the one Grandstream RemoteConnect shows. -->
+    <string name="bc_field_stun_hint">nat-a.gdms.cloud</string>
+    <string name="bc_problem_stun">Type the STUN server\'s address, e.g. nat-a.gdms.cloud (your phone system shows it).</string>
+
     <!-- Number setup: what to do with numbers starting with + (contacts store +1 555…). -->
     <string name="bc_field_plus">Numbers starting with +</string>
     <string name="bc_plus_drop">Drop the +</string>

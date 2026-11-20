@@ -31,3 +31,13 @@ that signs in on `host:5061;transport=tls` (Grandstream UCM RemoteConnect) sent 
 UDP 5060: "Calling…" forever, no dialing sound, and nothing in the UCM's CDR, while
 registration and incoming calls worked (2026-11-20, E4810). BusyCall adds the number's own port
 and transport to calls on its own server (`SipAddress.withAccountRoute`, in the bridge).
+
+## Grandstream UCM RemoteConnect (remote access)
+Number settings that work from cell data (E4810, 2026-11-20):
+- **Server**: the "IP Endpoint/Trunk RemoteConnect Address" from UCM › RemoteConnect › Plan
+  (`<id>.e.gdms.cloud`), **Port** `5061`, **Connection** TLS.
+- **Network help (NAT)**: STUN, server `nat-a.gdms.cloud` (the plan page's STUN address).
+  Without it calls connect but neither side hears the other.
+- The Basic plan limits remote calls to 20 minutes each and 120 minutes a day, 2 at once.
+- The UCM sends incoming calls from its LAN IP; BusyCall shows phone-number callers as the
+  number whatever host they come from (`bridge/PeerName`).

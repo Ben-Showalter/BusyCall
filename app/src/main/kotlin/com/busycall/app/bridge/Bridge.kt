@@ -110,12 +110,29 @@ data class NumberDraft(
     val voicemail: String = "",
     /** What to do with numbers starting with + when calling from this number. */
     val plusRule: PlusRule = PlusRule.DropPlus,
+    /** Network help for call audio behind NAT (upstream's medianat). */
+    val nat: NatMode = NatMode.Off,
+    /** STUN server host (`nat-a.gdms.cloud`) or URI, used when [nat] isn't Off. */
+    val stunServer: String = "",
 )
+
+/**
+ * Network help for call audio (upstream's per-account `medianat`): needed when the phone and
+ * the phone system can't reach each other's audio directly, e.g. Grandstream UCM RemoteConnect
+ * (its guide: STUN `nat-a.gdms.cloud`). A setting any system can use (AGENTS §0.6).
+ */
+enum class NatMode(val param: String) {
+    Off(""), Stun("stun"), Ice("ice");
+
+    companion object {
+        fun fromParam(value: String?): NatMode = values().firstOrNull { it.param.isNotEmpty() && it.param == value?.trim()?.lowercase() } ?: Off
+    }
+}
 
 /** Why a number couldn't be saved; each maps to a plain-language message on screen. */
 enum class SaveProblem {
     ServiceNotRunning, InvalidServer, InvalidUser, InvalidPort, InvalidPassword,
-    InvalidName, NameTaken, AlreadyExists, AllocationFailed,
+    InvalidName, NameTaken, AlreadyExists, AllocationFailed, InvalidStun,
 }
 
 sealed class SaveResult {

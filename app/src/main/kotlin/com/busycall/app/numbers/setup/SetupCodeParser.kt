@@ -1,6 +1,7 @@
 package com.busycall.app.numbers.setup
 
 import com.busycall.app.AppIdentity
+import com.busycall.app.bridge.NatMode
 import com.busycall.app.bridge.NumberDraft
 import com.busycall.app.bridge.SipAddress
 import com.busycall.app.bridge.Transport
@@ -11,7 +12,7 @@ import java.net.URLDecoder
  * Never logs the code or anything from it.
  *
  * Accepted:
- * 1. BusyCall links, version 1: `busycall:add?v=1&name=..&server=..&port=..&user=..&auth=..&pass=..&transport=..&vm=..`
+ * 1. BusyCall links, version 1: `busycall:add?v=1&name=..&server=..&port=..&user=..&auth=..&pass=..&transport=..&vm=..&nat=..&stun=..`
  *    (values URL-encoded; only server and user required), also as `https://<host>/<path>#add?…`
  *    and under any scheme in [AppIdentity.OLD_LINK_SCHEMES].
  * 2. baresip account lines: `"Name" <sip:104@pbx;transport=tls>;auth_user="104";auth_pass="secret";…`
@@ -88,6 +89,11 @@ object SetupCodeParser {
                 password = fields["pass"].orEmpty(),
                 transport = Transport.fromParam(fields["transport"]) ?: Transport.UDP,
                 voicemail = fields["vm"]?.trim().orEmpty(),
+                // Network help: `nat=stun|ice` and `stun=host`; a STUN server alone means STUN.
+                nat = NatMode.fromParam(fields["nat"]).let {
+                    if (it == NatMode.Off && !fields["stun"].isNullOrBlank()) NatMode.Stun else it
+                },
+                stunServer = fields["stun"]?.trim().orEmpty(),
             )
         )
     }

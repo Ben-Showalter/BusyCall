@@ -1,6 +1,7 @@
 package com.busycall.app.numbers
 
 import android.content.Intent
+import com.busycall.app.bridge.NatMode
 import com.busycall.app.bridge.NumberDraft
 import com.busycall.app.bridge.PlusRule
 import com.busycall.app.bridge.Transport
@@ -21,6 +22,8 @@ object DraftExtras {
         .putExtra(P + "vm", draft.voicemail)
         .putExtra(P + "plus", draft.plusRule.key())
         .putExtra(P + "plus_prefix", (draft.plusRule as? PlusRule.ReplaceWith)?.prefix)
+        .putExtra(P + "nat", draft.nat.param)
+        .putExtra(P + "stun", draft.stunServer)
 
     fun get(intent: Intent): NumberDraft? {
         if (!intent.hasExtra(P + "server")) return null
@@ -34,6 +37,8 @@ object DraftExtras {
             transport = Transport.fromParam(intent.getStringExtra(P + "transport")) ?: Transport.UDP,
             voicemail = intent.getStringExtra(P + "vm").orEmpty(),
             plusRule = PlusRule.of(intent.getStringExtra(P + "plus"), intent.getStringExtra(P + "plus_prefix")),
+            nat = NatMode.fromParam(intent.getStringExtra(P + "nat")),
+            stunServer = intent.getStringExtra(P + "stun").orEmpty(),
         )
     }
 }
