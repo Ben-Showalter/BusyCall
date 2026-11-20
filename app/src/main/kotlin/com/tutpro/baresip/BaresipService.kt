@@ -2152,6 +2152,7 @@ class BaresipService: Service() {
                 startForeground(STATUS_NOTIFICATION_ID, notification, foregroundServiceType())
             else
                 startForeground(STATUS_NOTIFICATION_ID, notification)
+            if (hideStatusNotification) stopForeground(true) // BusyCall
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start foreground service: ${e.message}")
             // Fallback to standard notification if background start is denied
@@ -2178,6 +2179,10 @@ class BaresipService: Service() {
                 }
             }
 
+            if (activeCall == null && hideStatusNotification) { // BusyCall
+                stopForeground(true); nm.cancel(CALL_NOTIFICATION_ID); nm.cancel(STATUS_NOTIFICATION_ID) // BusyCall
+                return@post // BusyCall
+            } // BusyCall
             val targetId = if (activeCall != null) CALL_NOTIFICATION_ID else STATUS_NOTIFICATION_ID
             val builder = NotificationCompat.Builder(this, LOW_CHANNEL_ID)
             val intent = Intent(this, MainActivity::class.java)
@@ -3677,6 +3682,7 @@ class BaresipService: Service() {
         var blocked = ArrayList<Blocked>()
         // BusyCall: its own call blocking (aor, peerUri, callerName) -> block?; upstream rejects and logs.
         @Volatile var callFilter: ((String, String, String) -> Boolean)? = null
+        @Volatile var hideStatusNotification = false // BusyCall: no status notification while something else keeps the app alive
         var blockRules = mutableListOf<BlockRule>()
 
         fun isBlocked(aor: String, uri: String): Boolean {
