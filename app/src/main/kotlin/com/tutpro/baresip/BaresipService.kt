@@ -2743,6 +2743,7 @@ class BaresipService: Service() {
 
         val callerNumber = Utils.uriUserPart(peerUri)
         if (call !is Call.ExternalCall && shouldStartRinging(callerNumber)) startRinging()
+        com.busycall.app.call.CallRouter.onIncomingCall(this, callp) // BusyCall: its Incoming screen in front
 
         if (!Utils.isVisible()) {
             val piFlags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
