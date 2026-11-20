@@ -43,8 +43,11 @@ class Blocked (
             save()
         }
 
+        @Volatile var restored = false // BusyCall: as CallHistory, never save before restore
+
         fun save() {
             if (!BaresipService.isNativeReady) return
+            if (!restored) return // BusyCall
             val blockedCopy = synchronized(BaresipService.blocked) {
                 ArrayList(BaresipService.blocked)
             }
@@ -58,7 +61,11 @@ class Blocked (
             }
         }
 
-        fun restore() {
+        fun restore() { // BusyCall: always mark restored, then save what's in memory
+            try { restoreFromFile() } finally { restored = true; save() } // BusyCall
+        } // BusyCall
+
+        private fun restoreFromFile() { // BusyCall: was restore()
             val file = File(BaresipService.filesPath + "/blocked")
             val oldFile = File(BaresipService.filesPath + "/blocked.json")
             if (oldFile.exists()) {
@@ -70,8 +77,10 @@ class Blocked (
                     val jsonString = file.readText()
                     val blockedList = Json.decodeFromString<List<Blocked>>(jsonString)
                     synchronized(BaresipService.blocked) {
+                        val added = ArrayList(BaresipService.blocked) // BusyCall: blocked since startup
                         BaresipService.blocked.clear()
                         BaresipService.blocked.addAll(blockedList)
+                        BaresipService.blocked.addAll(added) // BusyCall
                     }
                     Log.d(TAG, "Restored ${BaresipService.blocked.size} blocked calls and messages")
                 } catch (e: Exception) {

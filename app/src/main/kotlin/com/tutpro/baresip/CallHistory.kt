@@ -76,8 +76,13 @@ class CallHistory(val aor: String, val peerUri: String, val direction: String) :
             save()
         }
 
+        // BusyCall: nothing is saved until the saved log has been read back (after a reboot the
+        // startup save ran first and wrote an empty log over it).
+        @Volatile var restored = false // BusyCall
+
         fun save() {
             if (!BaresipService.isNativeReady) return
+            if (!restored) return // BusyCall
             val historyCopy = synchronized(BaresipService.callHistory) {
                 ArrayList(BaresipService.callHistory)
             }
@@ -100,7 +105,11 @@ class CallHistory(val aor: String, val peerUri: String, val direction: String) :
             }
         }
 
-        fun restore() {
+        fun restore() { // BusyCall: always mark restored, then save what's in memory
+            try { restoreFromFile() } finally { restored = true; save() } // BusyCall
+        } // BusyCall
+
+        private fun restoreFromFile() { // BusyCall: was restore()
             val file = File(BaresipService.filesPath + "/call_history")
             if (file.exists()) {
                 val content = file.readText()
@@ -108,8 +117,10 @@ class CallHistory(val aor: String, val peerUri: String, val direction: String) :
                     try {
                         val restoredHistory = Json.decodeFromString<List<CallHistory>>(content)
                         synchronized(BaresipService.callHistory) {
+                            val added = ArrayList(BaresipService.callHistory) // BusyCall: calls since startup
                             BaresipService.callHistory.clear()
                             BaresipService.callHistory.addAll(restoredHistory)
+                            BaresipService.callHistory.addAll(added) // BusyCall
                         }
                         Log.d(TAG, "Restored history of ${BaresipService.callHistory.size} calls from JSON")
                         return
@@ -131,8 +142,10 @@ class CallHistory(val aor: String, val peerUri: String, val direction: String) :
                     val restoredHistory = ois.readObject() as? List<CallHistory>
                     if (restoredHistory != null) {
                         synchronized(BaresipService.callHistory) {
+                            val added = ArrayList(BaresipService.callHistory) // BusyCall: calls since startup
                             BaresipService.callHistory.clear()
                             BaresipService.callHistory.addAll(restoredHistory)
+                            BaresipService.callHistory.addAll(added) // BusyCall
                         }
                         Log.d(TAG, "Restored history of ${BaresipService.callHistory.size} calls from Java")
                         save()
