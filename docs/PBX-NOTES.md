@@ -47,3 +47,8 @@ Parking is a transfer to the park number (`700` by default). BusyCall parks like
 the caller holds, BusyCall calls 700, the system announces the slot (e.g. 701) to you, and OK
 ("Park") connects the two (upstream's attended transfer), leaving the caller in the slot.
 Anyone dials the slot number to pick it up. The park number is a per-number setting.
+
+## Blocked calls and voicemail (all systems)
+BusyCall's blocking rejects a call the way upstream does: SIP calls get "486 Busy Here", SIM calls
+are declined. Whether the caller then reaches voicemail is the phone system's or carrier's busy
+setting. Grandstream UCM: Extension › (Features) Call Forward Busy, or voicemail on busy.

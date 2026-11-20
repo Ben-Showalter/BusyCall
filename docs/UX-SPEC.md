@@ -88,6 +88,11 @@ Menus and confirmations are `AlertDialog`s drawn as a rounded dark card with an 
 - **Editing:** title "Edit number"; an empty password keeps the saved one (note shown).
 - **Errors:** plain words at the top (and a toast), focus moves to the field.
 - **Park number** field (default `700`, hint `700`; empty hides Park in calls).
+- **Block calls** row → menu (note: "Blocked callers are turned away as busy, which usually sends
+  them to voicemail"): **Off** · **Known spam** (marked as spam by the carrier/phone system, hidden
+  or fake numbers, your blocked list) · **Not in contacts** (unknown numbers blocked; a second call
+  from the same number within 5 minutes rings). Phone (SIM) gets the same choice from its row in
+  Numbers while SIM calls use BusyCall.
 - **Options:** Show/Hide password · Connection · Numbers starting with + · Network help (NAT).
 - Every call from the number applies its + rule to `+` numbers (contacts store `+1 555…`);
   extensions and SIP addresses are never changed.
@@ -136,7 +141,15 @@ Menus and confirmations are `AlertDialog`s drawn as a rounded dark card with an 
   `Missed/Incoming/Outgoing · to/from <number> · <time>`. "No calls yet." when empty.
 - **Keys:** CALL calls back from the number the call was on (no picker). OK / tap: Call back ·
   Call from… (opens the Dialer with the number) · Delete.
-- **Options:** Call back · Delete, for the focused call.
+- **Options:** Call back · Delete, for the focused call. The row menu also has **Block this
+  number** (your blocked list; applies when the number's Block calls isn't Off).
+
+## Blocked calls (`blocking/BlockedActivity`) — Home › Options › Blocked calls
+- **Shows:** each blocked call, newest first: name/number / `reason · to <number> · <time>`
+  (Spam, Hidden number, Fake number, Your blocked list, Not in contacts). "No blocked calls." when empty.
+- **OK:** Unblock (this caller always rings from now on) · Call back · Delete.
+- A blocked call doesn't ring, isn't a missed call, and has no notification (upstream may show a
+  short "blocked" toast).
 
 ## S4 Incoming call (`call/IncomingCallActivity`)
 - Opens by itself in front of any app when a call rings (one hook line in upstream's

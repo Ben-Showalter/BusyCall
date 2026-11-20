@@ -25,6 +25,7 @@ object DraftExtras {
         .putExtra(P + "nat", draft.nat.param)
         .putExtra(P + "stun", draft.stunServer)
         .putExtra(P + "park", draft.parkNumber)
+        .putExtra(P + "block", draft.blockMode.key)
 
     fun get(intent: Intent): NumberDraft? {
         if (!intent.hasExtra(P + "server")) return null
@@ -41,6 +42,7 @@ object DraftExtras {
             nat = NatMode.fromParam(intent.getStringExtra(P + "nat")),
             stunServer = intent.getStringExtra(P + "stun").orEmpty(),
             parkNumber = intent.getStringExtra(P + "park") ?: com.busycall.app.bridge.DEFAULT_PARK_NUMBER,
+            blockMode = com.busycall.app.bridge.BlockMode.of(intent.getStringExtra(P + "block")),
         )
     }
 }

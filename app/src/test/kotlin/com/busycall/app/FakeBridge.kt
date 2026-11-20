@@ -73,6 +73,16 @@ class FakeBridge(
     var parkNumbers = mutableMapOf<String, String>()
     override fun transfer(callId: Long, dial: String): Boolean { transfers.add(callId to dial); return transferWorks }
     var defaultPhoneApp = false
+    val blockModes = mutableMapOf<String, com.busycall.app.bridge.BlockMode>()
+    val blockedList = mutableListOf<com.busycall.app.bridge.BlockedUi>()
+    val allowedCallers = mutableListOf<String>()
+    val blockedCallers = mutableListOf<String>()
+    override fun blockMode(numberId: String) = blockModes[numberId] ?: com.busycall.app.bridge.BlockMode.Off
+    override fun setBlockMode(numberId: String, mode: com.busycall.app.bridge.BlockMode) { blockModes[numberId] = mode }
+    override fun blockedCalls(limit: Int) = blockedList.take(limit)
+    override fun allowCaller(peerUri: String) { allowedCallers.add(peerUri) }
+    override fun blockCaller(peerUri: String) { blockedCallers.add(peerUri) }
+    override fun deleteBlocked(item: com.busycall.app.bridge.BlockedUi) { blockedList.remove(item) }
     var simUi: com.busycall.app.bridge.SimUi? = null
     override fun isDefaultPhoneApp(ctx: android.content.Context) = defaultPhoneApp
     override fun askToBeDefaultPhoneApp(activity: Activity) {}

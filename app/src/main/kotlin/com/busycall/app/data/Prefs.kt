@@ -13,6 +13,10 @@ object Prefs {
     private const val KEY_PLUS_RULE = "plus_rule:"
     private const val KEY_PLUS_PREFIX = "plus_prefix:"
     private const val KEY_PARK = "park_number:"
+    private const val KEY_BLOCK_MODE = "block_mode:"
+    private const val KEY_BLOCK_REASON = "block_reason:"
+    const val LIST_ALLOWED = "callers_allowed"
+    const val LIST_BLOCKED = "callers_blocked"
 
     private fun prefs(ctx: Context): SharedPreferences =
         ctx.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
@@ -36,6 +40,31 @@ object Prefs {
     fun plusRule(aor: String): Pair<String?, String?> {
         val p = app?.let { prefs(it) } ?: return null to null
         return p.getString(KEY_PLUS_RULE + aor, null) to p.getString(KEY_PLUS_PREFIX + aor, null)
+    }
+
+    /** Call blocking mode key of number [aor] (BlockMode.key); null = off. */
+    fun blockMode(aor: String): String? = app?.let { prefs(it) }?.getString(KEY_BLOCK_MODE + aor, null)
+
+    fun setBlockMode(aor: String, key: String?) {
+        val p = app?.let { prefs(it) } ?: return
+        p.edit().apply { if (key == null) remove(KEY_BLOCK_MODE + aor) else putString(KEY_BLOCK_MODE + aor, key) }.apply()
+    }
+
+    /** Your allowed or blocked callers ([LIST_ALLOWED] / [LIST_BLOCKED]), as CallFilter keys. */
+    fun callers(list: String): Set<String> = app?.let { prefs(it) }?.getStringSet(list, null)?.toSet() ?: emptySet()
+
+    fun setCaller(list: String, key: String, present: Boolean) {
+        val p = app?.let { prefs(it) } ?: return
+        val now = callers(list).toMutableSet()
+        if (present) now.add(key) else now.remove(key)
+        p.edit().putStringSet(list, now).apply()
+    }
+
+    /** Why calls from caller [key] were last blocked (BlockReason.key). */
+    fun blockReason(key: String): String? = app?.let { prefs(it) }?.getString(KEY_BLOCK_REASON + key, null)
+
+    fun setBlockReason(key: String, reason: String) {
+        app?.let { prefs(it) }?.edit()?.putString(KEY_BLOCK_REASON + key, reason)?.apply()
     }
 
     /** The call-park number of number [aor]; null if never set (the default applies). */

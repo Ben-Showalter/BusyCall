@@ -86,6 +86,10 @@ class CallLogActivity : FlipBaseActivity() {
             val number = SipAddress.parse(row.recent.peerUri).user.ifEmpty { row.recent.peerUri }
             startActivity(Intent(this, DialerActivity::class.java).putExtra(DialerActivity.EXTRA_NUMBER, number))
         },
+        MenuItem(getString(R.string.bc_calllog_block)) {
+            Bridges.current.blockCaller(row.recent.peerUri)
+            Toast.makeText(this, R.string.bc_calllog_blocked, Toast.LENGTH_LONG).show()
+        },
         MenuItem(getString(R.string.bc_calllog_delete)) {
             viewModel.delete(row)
             lastState = null

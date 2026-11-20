@@ -36,6 +36,27 @@ object BaresipBridge : Bridge {
     private const val TAG = "BusyCall"
     const val PERMISSIONS_REQUEST = 4201
 
+    init {
+        // BusyCall's call blocking, asked by upstream for every incoming call (UPSTREAM.md).
+        BaresipService.callFilter = { aor, peerUri, callerName -> filterCall(aor, peerUri, callerName) }
+    }
+
+    private fun filterCall(aor: String, peerUri: String, callerName: String): Boolean {
+        BaresipService.instance?.let { Prefs.init(it) }
+        val mode = BlockMode.of(Prefs.blockMode(aor))
+        if (mode == BlockMode.Off) return false
+        val earlier = synchronized(BaresipService.blocked) {
+            BaresipService.blocked.filter { it.aor == aor && it.request == "invite" }.map { it.peerUri to it.timeStamp }
+        }
+        val reason = CallFilter.decide(
+            mode, peerUri, callerName, contactIndex().keys,
+            Prefs.callers(Prefs.LIST_ALLOWED), Prefs.callers(Prefs.LIST_BLOCKED),
+            earlier, System.currentTimeMillis(),
+        ) ?: return false
+        Prefs.setBlockReason(CallFilter.keyOf(peerUri), reason.key)
+        return true
+    }
+
     @Volatile
     private var startRequested = false
 
@@ -191,6 +212,7 @@ object BaresipBridge : Bridge {
             },
             plusRule = plusRuleOf(acc.aor),
             parkNumber = parkNumber(acc.aor),
+            blockMode = blockMode(acc.aor),
             nat = NatMode.fromParam(acc.mediaNat),
             stunServer = acc.stunServer.removePrefix("stun:"),
         )
@@ -316,6 +338,7 @@ object BaresipBridge : Bridge {
         Account.saveAccounts()
         Prefs.setPlusRule(id, null, null)
         Prefs.setParkNumber(id, null)
+        Prefs.setBlockMode(id, null)
     }
 
     /** Network help, set through upstream's own account functions (as its account screen does). */
@@ -339,7 +362,10 @@ object BaresipBridge : Bridge {
         Prefs.setPlusRule(aor, rule.key(), (rule as? PlusRule.ReplaceWith)?.prefix)
     }
 
-    private fun savePark(aor: String, draft: NumberDraft) = Prefs.setParkNumber(aor, draft.parkNumber.trim())
+    private fun savePark(aor: String, draft: NumberDraft) {
+        Prefs.setParkNumber(aor, draft.parkNumber.trim())
+        setBlockMode(aor, draft.blockMode)
+    }
 
     override fun setDefault(id: String) {
         val ua = agentOf(id) ?: return
@@ -540,6 +566,47 @@ object BaresipBridge : Bridge {
             Log.e(TAG, "connectCalls failed: ${e.javaClass.simpleName}")
             ConnectResult.Failed
         }
+    }
+
+    override fun blockMode(numberId: String): BlockMode = BlockMode.of(Prefs.blockMode(numberId))
+
+    override fun setBlockMode(numberId: String, mode: BlockMode) =
+        Prefs.setBlockMode(numberId, if (mode == BlockMode.Off) null else mode.key)
+
+    override fun blockedCalls(limit: Int): List<BlockedUi> {
+        val list = synchronized(BaresipService.blocked) { BaresipService.blocked.filter { it.request == "invite" } }
+        return list.sortedByDescending { it.timeStamp }.take(limit).map { b ->
+            val ua = UserAgent.ofAor(b.aor)
+            BlockedUi(
+                numberId = b.aor,
+                numberLabel = if (ua?.account?.isMobile == true) simLabel()
+                    else ua?.account?.nickName?.ifEmpty { null } ?: SipAddress.parse(b.aor).user,
+                peerUri = b.peerUri,
+                peerName = PeerName.of(b.peerUri, contactIndex())
+                    ?: if (ua != null) Utils.friendlyUri(b.peerUri, ua.account) else Utils.uriUserPart(b.peerUri),
+                timeMillis = b.timeStamp,
+                reason = BlockReason.of(Prefs.blockReason(CallFilter.keyOf(b.peerUri))),
+            )
+        }
+    }
+
+    override fun allowCaller(peerUri: String) {
+        val key = CallFilter.keyOf(peerUri)
+        Prefs.setCaller(Prefs.LIST_BLOCKED, key, false)
+        Prefs.setCaller(Prefs.LIST_ALLOWED, key, true)
+    }
+
+    override fun blockCaller(peerUri: String) {
+        val key = CallFilter.keyOf(peerUri)
+        Prefs.setCaller(Prefs.LIST_ALLOWED, key, false)
+        Prefs.setCaller(Prefs.LIST_BLOCKED, key, true)
+    }
+
+    override fun deleteBlocked(item: BlockedUi) {
+        synchronized(BaresipService.blocked) {
+            BaresipService.blocked.removeAll { it.aor == item.numberId && it.peerUri == item.peerUri && it.timeStamp == item.timeMillis }
+        }
+        Blocked.save()
     }
 
     override fun parkNumber(numberId: String): String = Prefs.parkNumber(numberId) ?: DEFAULT_PARK_NUMBER

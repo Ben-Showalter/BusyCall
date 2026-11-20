@@ -124,6 +124,7 @@ class HomeActivity : FlipBaseActivity() {
     override fun optionsItems(): List<MenuItem> = listOf(
         MenuItem(getString(R.string.bc_menu_contacts)) { startActivity(Intent(this, ContactsActivity::class.java)) },
         MenuItem(getString(R.string.bc_menu_calllog)) { startActivity(Intent(this, CallLogActivity::class.java)) },
+        MenuItem(getString(R.string.bc_menu_blocked)) { startActivity(Intent(this, com.busycall.app.blocking.BlockedActivity::class.java)) },
         MenuItem(getString(R.string.bc_menu_numbers)) { startActivity(Intent(this, NumbersActivity::class.java)) },
         MenuItem(getString(R.string.bc_menu_classic)) { Bridges.current.openClassicScreens(this) },
         MenuItem(getString(R.string.bc_menu_settings)) { startActivity(Intent(this, SettingsActivity::class.java)) },

@@ -32,6 +32,27 @@ object Words {
         is NumberProblem.Other -> ctx.getString(R.string.bc_problem_other, problem.text)
     }
 
+    /** A number's call blocking mode, as the row shows it. */
+    fun blockMode(ctx: Context, mode: com.busycall.app.bridge.BlockMode): String = ctx.getString(
+        when (mode) {
+            com.busycall.app.bridge.BlockMode.Off -> R.string.bc_block_off
+            com.busycall.app.bridge.BlockMode.KnownSpam -> R.string.bc_block_spam
+            com.busycall.app.bridge.BlockMode.NotInContacts -> R.string.bc_block_contacts
+        }
+    )
+
+    /** Why a call was blocked. */
+    fun blockReason(ctx: Context, reason: com.busycall.app.bridge.BlockReason?): String = ctx.getString(
+        when (reason) {
+            com.busycall.app.bridge.BlockReason.Spam -> R.string.bc_reason_spam
+            com.busycall.app.bridge.BlockReason.Hidden -> R.string.bc_reason_hidden
+            com.busycall.app.bridge.BlockReason.YourList -> R.string.bc_reason_list
+            com.busycall.app.bridge.BlockReason.Impossible -> R.string.bc_reason_impossible
+            com.busycall.app.bridge.BlockReason.NotInContacts -> R.string.bc_reason_contacts
+            null -> R.string.bc_reason_blocked
+        }
+    )
+
     /** The "Numbers starting with +" choice, with an example. */
     fun plusRule(ctx: Context, rule: PlusRule): String = when (rule) {
         PlusRule.DropPlus -> ctx.getString(R.string.bc_plus_drop_value)

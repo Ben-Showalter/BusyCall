@@ -322,6 +322,8 @@ Test on a 240×320 mdpi emulator with touch off, then on the real phone (guide c
 - **Hiding the navigation bar on touch phones**, or showing the dial pad on
   keypad phones.
 - **Silent failures.** Every failure gets plain words and Retry.
+- **Writing your own call rejection.** Blocking decisions are BusyCall's (`bridge/CallFilter`);
+  rejecting and logging the call is upstream's, through the `callFilter` hook (UPSTREAM.md).
 
 ## 14. When you're unsure
 

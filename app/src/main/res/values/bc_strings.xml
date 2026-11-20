@@ -310,6 +310,35 @@
     <!-- Menu item. %1$s = "Mobile · +15550198". -->
     <string name="bc_contacts_call_number">Call %1$s</string>
 
+    <!-- Call blocking (owner, 2026-11-20). -->
+    <string name="bc_field_block">Block calls</string>
+    <string name="bc_block_off">Off</string>
+    <string name="bc_block_off_sub">Every call rings</string>
+    <string name="bc_block_spam">Known spam</string>
+    <string name="bc_block_spam_sub">Marked as spam, hidden or fake numbers, your blocked list</string>
+    <string name="bc_block_contacts">Not in contacts</string>
+    <string name="bc_block_contacts_sub">Unknown numbers are blocked; a second call within 5 minutes rings</string>
+    <string name="bc_block_voicemail_note">Blocked callers are turned away as busy, which usually sends them to voicemail.</string>
+    <string name="bc_reason_spam">Spam</string>
+    <string name="bc_reason_hidden">Hidden number</string>
+    <string name="bc_reason_list">Your blocked list</string>
+    <string name="bc_reason_impossible">Fake number</string>
+    <string name="bc_reason_contacts">Not in contacts</string>
+    <string name="bc_reason_blocked">Blocked</string>
+    <string name="bc_menu_blocked">Blocked calls</string>
+    <string name="bc_blocked_title">Blocked calls</string>
+    <string name="bc_blocked_footer">OK: unblock or call back</string>
+    <string name="bc_blocked_empty">No blocked calls.</string>
+    <!-- A blocked call. %1$s why, %2$s "to Office", %3$s when. -->
+    <string name="bc_blocked_line">%1$s · %2$s · %3$s</string>
+    <string name="bc_blocked_unblock">Unblock</string>
+    <string name="bc_blocked_unblock_sub">This caller always rings from now on</string>
+    <string name="bc_blocked_unblocked">Unblocked. Calls from this number will ring.</string>
+    <string name="bc_calllog_block">Block this number</string>
+    <string name="bc_calllog_blocked">Blocked. Turn on Block calls for the number to reject it.</string>
+    <!-- Numbers › Phone (SIM) while BusyCall is the phone's dialer. %1$s = the blocking mode. -->
+    <string name="bc_sim_blocking_line">SIM calls use BusyCall · Block: %1$s</string>
+
     <!-- S6 Call log -->
     <string name="bc_calllog_title">Call log</string>
     <string name="bc_calllog_footer">CALL calls back</string>

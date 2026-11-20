@@ -8,6 +8,7 @@ import android.view.View
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import com.busycall.app.bridge.BlockMode
 import com.busycall.app.bridge.NatMode
 import com.busycall.app.bridge.NumberDraft
 import com.busycall.app.bridge.PlusRule
@@ -16,6 +17,7 @@ import com.busycall.app.bridge.SaveResult
 import com.busycall.app.bridge.Transport
 import com.busycall.app.keys.KeyRouter
 import com.busycall.app.keys.LogicalKey
+import com.busycall.app.ui.BlockMenu
 import com.busycall.app.ui.FlipBaseActivity
 import com.busycall.app.ui.MenuItem
 import com.busycall.app.ui.Menus
@@ -50,6 +52,8 @@ class NumberSetupActivity : FlipBaseActivity() {
     private lateinit var stun: EditText
     private lateinit var stunLabel: TextView
     private var nat = NatMode.Off
+    private var blockMode = BlockMode.Off
+    private lateinit var blockValue: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,6 +73,7 @@ class NumberSetupActivity : FlipBaseActivity() {
         transportValue = findViewById(R.id.bc_setup_transport_value)
         plusValue = findViewById(R.id.bc_setup_plus_value)
         natValue = findViewById(R.id.bc_setup_nat_value)
+        blockValue = findViewById(R.id.bc_setup_block_value)
         stun = findViewById(R.id.bc_setup_stun)
         stunLabel = findViewById(R.id.bc_setup_stun_label)
 
@@ -85,6 +90,8 @@ class NumberSetupActivity : FlipBaseActivity() {
         showTransport()
         plusRule = draft.plusRule
         showPlusRule()
+        blockMode = draft.blockMode
+        blockValue.text = Words.blockMode(this, blockMode)
         nat = draft.nat
         stun.setText(draft.stunServer)
         showNat()
@@ -99,6 +106,12 @@ class NumberSetupActivity : FlipBaseActivity() {
         findViewById<View>(R.id.bc_setup_transport).setOnClickListener { chooseTransport() }
         findViewById<View>(R.id.bc_setup_plus).setOnClickListener { choosePlusRule() }
         findViewById<View>(R.id.bc_setup_nat).setOnClickListener { chooseNat() }
+        findViewById<View>(R.id.bc_setup_block).setOnClickListener {
+            BlockMenu.show(this) { mode ->
+                blockMode = mode
+                blockValue.text = Words.blockMode(this, mode)
+            }
+        }
         findViewById<View>(R.id.bc_setup_save).setOnClickListener { save() }
         findViewById<View>(R.id.bc_setup_more).setOnClickListener { openOptions() }
         findViewById<TextView>(R.id.bc_setup_save).paint.isFakeBoldText = true
@@ -228,6 +241,7 @@ class NumberSetupActivity : FlipBaseActivity() {
         nat = nat,
         stunServer = stun.text.toString().trim(),
         parkNumber = park.text.toString().trim(),
+        blockMode = blockMode,
     )
 
     private fun save() {

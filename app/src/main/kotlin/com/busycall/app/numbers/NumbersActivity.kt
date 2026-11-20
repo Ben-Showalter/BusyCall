@@ -110,12 +110,19 @@ class NumbersActivity : FlipBaseActivity() {
                 Entry.Sim -> {
                     Rows.setText(title, getString(R.string.bc_sim_title))
                     Words.dot(title, null)
-                    // While BusyCall is the phone's dialer, SIM calls run on its own screens.
-                    Rows.setText(subtitle, getString(
-                        if (Bridges.current.sim() != null) R.string.bc_settings_phone_dialer_on else R.string.bc_sim_subtitle,
+                    // While BusyCall is the phone's dialer, SIM calls run on its own screens and can be blocked.
+                    val sim = Bridges.current.sim()
+                    Rows.setText(subtitle, if (sim == null) getString(R.string.bc_sim_subtitle) else getString(
+                        R.string.bc_sim_blocking_line, Words.blockMode(this, Bridges.current.blockMode(sim.id)),
                     ))
                     Rows.tone(subtitle, RowTone.Muted)
-                    row.setOnClickListener { openPhoneDialer() }
+                    row.setOnClickListener {
+                        if (sim == null) openPhoneDialer() else com.busycall.app.ui.BlockMenu.show(this) { mode ->
+                            Bridges.current.setBlockMode(sim.id, mode)
+                            lastState = null
+                            tick.run()
+                        }
+                    }
                 }
                 Entry.Add -> {
                     Rows.setText(title, getString(R.string.bc_numbers_add))

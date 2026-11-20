@@ -136,6 +136,19 @@ data class NumberDraft(
     val stunServer: String = "",
     /** The phone system's call-park number (`700` on Asterisk-based systems); empty hides Park. */
     val parkNumber: String = DEFAULT_PARK_NUMBER,
+    /** Call blocking for this number. */
+    val blockMode: BlockMode = BlockMode.Off,
+)
+
+/** One blocked call, for the Blocked calls screen. */
+data class BlockedUi(
+    val numberId: String,
+    /** Which of the user's numbers it was to. */
+    val numberLabel: String,
+    val peerUri: String,
+    val peerName: String,
+    val timeMillis: Long,
+    val reason: BlockReason?,
 )
 
 /** Call park on Asterisk-based systems (Grandstream UCM included); a per-number setting. */
@@ -267,6 +280,18 @@ interface Bridge {
 
     /** The SIM while SIM calls run through BusyCall, else null. */
     fun sim(): SimUi?
+
+    // ---- Call blocking (BusyCall's CallFilter through upstream's callFilter hook) ----
+
+    fun blockMode(numberId: String): BlockMode
+    fun setBlockMode(numberId: String, mode: BlockMode)
+    /** Blocked calls, newest first. */
+    fun blockedCalls(limit: Int): List<BlockedUi>
+    /** Always let this caller ring (and forget it was blocked). */
+    fun allowCaller(peerUri: String)
+    /** Always block this caller. */
+    fun blockCaller(peerUri: String)
+    fun deleteBlocked(item: BlockedUi)
 
     companion object {
         const val CONTACTS_REQUEST = 4202
