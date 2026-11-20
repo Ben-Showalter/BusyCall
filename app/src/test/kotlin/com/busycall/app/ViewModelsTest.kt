@@ -65,6 +65,17 @@ class ViewModelsTest {
         assertEquals(2, vm.state().calls.size)
     }
 
+    @Test fun `home re-reads the call log only when it changed`() {
+        val call = RecentUi("Mom", "sip:5550142@pbx", "Home", "sip:5550142@pbx", CallDirection.In, false, 1_000L)
+        val bridge = FakeBridge(numbers = mutableListOf(office), recents = mutableListOf(call))
+        val vm = HomeViewModel(bridge)
+        repeat(5) { vm.state() } // the 1 s tick
+        assertEquals(1, bridge.recentsReads)
+        bridge.recents.add(call.copy(peerName = "Anna"))
+        assertEquals(2, vm.state().calls.size)
+        assertEquals(2, bridge.recentsReads)
+    }
+
     @Test fun `home with every number connected shows no number rows, and with none offers to add one`() {
         assertTrue(HomeViewModel(FakeBridge(numbers = mutableListOf(office))).state().trouble.isEmpty())
         val empty = HomeViewModel(FakeBridge()).state()

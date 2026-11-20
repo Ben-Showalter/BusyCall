@@ -204,6 +204,12 @@ interface Bridge {
     fun recents(limit: Int): List<RecentUi>
 
     /**
+     * Changes whenever [recents] would: a call added or removed, or the contacts reloaded. Cheap,
+     * so Home can poll it each second and re-read the log only when it changed.
+     */
+    fun recentsVersion(): Long
+
+    /**
      * Temporary, until BusyCall's own Dialer and call screens exist: opens upstream's screens,
      * optionally with a number or SIP address to dial (ACTION_DIAL, as upstream handles it).
      */

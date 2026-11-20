@@ -2,7 +2,6 @@ package com.busycall.app.blocking
 
 import android.os.Bundle
 import android.view.View
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import com.busycall.app.bridge.Bridges
@@ -10,6 +9,7 @@ import com.busycall.app.bridge.PlaceResult
 import com.busycall.app.call.Calling
 import com.busycall.app.call.InCallActivity
 import com.busycall.app.ui.FlipBaseActivity
+import com.busycall.app.ui.RowList
 import com.busycall.app.ui.MenuItem
 import com.busycall.app.ui.Menus
 import com.busycall.app.ui.RowTone
@@ -25,15 +25,32 @@ import com.tutpro.baresip.R
 class BlockedActivity : FlipBaseActivity() {
 
     private val viewModel = BlockedViewModel()
-    private lateinit var list: LinearLayout
+    private lateinit var list: RowList<BlockedRow>
     private lateinit var hint: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.bc_activity_list)
+        setContentView(R.layout.bc_activity_listview)
         findViewById<TextView>(R.id.bc_title).setText(R.string.bc_blocked_title)
         hint = findViewById(R.id.bc_list_hint)
-        list = findViewById(R.id.bc_list)
+        list = RowList(
+            findViewById(R.id.bc_listview),
+            listOf(R.layout.bc_row),
+            layoutOf = { R.layout.bc_row },
+            bind = { row, item ->
+                Rows.setText(row.findViewById(R.id.bc_row_title), item.item.peerName)
+                val subtitle = row.findViewById<TextView>(R.id.bc_row_subtitle)
+                Rows.setText(subtitle, getString(
+                    R.string.bc_blocked_line,
+                    Words.blockReason(this, item.item.reason),
+                    getString(R.string.bc_recent_to, item.item.numberLabel),
+                    Words.time(this, item.time),
+                ))
+                Rows.tone(subtitle, RowTone.Muted)
+                Rows.setText(row.findViewById(R.id.bc_row_trailing), null)
+            },
+            onClick = ::showActions,
+        )
         setFooterHint(getString(R.string.bc_blocked_footer))
     }
 
@@ -46,18 +63,8 @@ class BlockedActivity : FlipBaseActivity() {
         val rows = viewModel.rows()
         hint.text = if (rows.isEmpty()) getString(R.string.bc_blocked_empty) else ""
         hint.visibility = if (rows.isEmpty()) View.VISIBLE else View.GONE
-        val views = Rows.fill(list, rows) { row, title, subtitle, _, item ->
-            Rows.setText(title, item.item.peerName)
-            Rows.setText(subtitle, getString(
-                R.string.bc_blocked_line,
-                Words.blockReason(this, item.item.reason),
-                getString(R.string.bc_recent_to, item.item.numberLabel),
-                Words.time(this, item.time),
-            ))
-            Rows.tone(subtitle, RowTone.Muted)
-            row.setOnClickListener { showActions(item) }
-        }
-        if (currentFocus == null) views.firstOrNull()?.let { first -> first.post { if (currentFocus == null) first.requestFocus() } }
+        list.submit(rows)
+        list.focusIfNothingFocused(currentFocus)
     }
 
     private fun showActions(row: BlockedRow) {

@@ -29,7 +29,10 @@ class FakeBridge(
     override fun isRunning() = running
     override fun startService(activity: Activity) {}
     override fun numbers(): List<NumberUi> = numbers.map { it.copy(isDefault = it.id == (defaultId ?: numbers.firstOrNull()?.id)) }
-    override fun recents(limit: Int) = recents.take(limit)
+    var recentsReads = 0
+    var recentsVersionBump = 0L
+    override fun recents(limit: Int): List<RecentUi> { recentsReads++; return recents.take(limit) }
+    override fun recentsVersion(): Long = recents.hashCode().toLong() + recentsVersionBump
     override fun openClassicScreens(activity: Activity, dial: String?) {}
     override fun draftOf(id: String): NumberDraft? = numbers.firstOrNull { it.id == id }?.let {
         NumberDraft(name = it.label, server = it.server, user = it.number, transport = it.transport)

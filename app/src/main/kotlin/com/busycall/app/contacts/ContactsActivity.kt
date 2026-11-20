@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import com.busycall.app.bridge.Bridge
@@ -14,6 +13,7 @@ import com.busycall.app.bridge.ContactNumberUi
 import com.busycall.app.bridge.ContactUi
 import com.busycall.app.call.Calling
 import com.busycall.app.ui.FlipBaseActivity
+import com.busycall.app.ui.RowList
 import com.busycall.app.ui.MenuItem
 import com.busycall.app.ui.Menus
 import com.busycall.app.ui.RowTone
@@ -29,7 +29,8 @@ import com.tutpro.baresip.R
 class ContactsActivity : FlipBaseActivity() {
 
     private val viewModel = ContactsViewModel()
-    private lateinit var list: LinearLayout
+    // A contact, or the "Allow contacts" row while contacts are off.
+    private lateinit var list: RowList<Any>
     private lateinit var hint: TextView
     private var lastState: ContactsState? = null
     private var shown: List<ContactUi> = emptyList()
@@ -41,10 +42,16 @@ class ContactsActivity : FlipBaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.bc_activity_list)
+        setContentView(R.layout.bc_activity_listview)
         findViewById<TextView>(R.id.bc_title).setText(R.string.bc_contacts_title)
         hint = findViewById(R.id.bc_list_hint)
-        list = findViewById(R.id.bc_list)
+        list = RowList(
+            findViewById(R.id.bc_listview),
+            listOf(R.layout.bc_row),
+            layoutOf = { R.layout.bc_row },
+            bind = ::bindRow,
+            onClick = { if (it is ContactUi) showNumbers(it) else allow() },
+        )
         setFooterHint(getString(R.string.bc_contacts_footer))
     }
 
@@ -74,11 +81,11 @@ class ContactsActivity : FlipBaseActivity() {
         if (lastState?.on == false) add(MenuItem(getString(R.string.bc_contacts_allow)) { allow() })
     }
 
-    private fun focusedContact(): ContactUi? = currentFocus?.getTag(R.id.bc_list) as? ContactUi
+    private fun focusedContact(): ContactUi? = list.selected() as? ContactUi
 
     override fun onDigit(char: Char) {
         val index = viewModel.jumpIndex(shown, char) ?: return
-        list.getChildAt(index)?.requestFocus()
+        list.select(index)
     }
 
     /**
@@ -112,23 +119,27 @@ class ContactsActivity : FlipBaseActivity() {
         hint.visibility = if (message == null) View.GONE else View.VISIBLE
 
         shown = state.contacts
-        val rows = Rows.fill(list, state.contacts) { row, title, subtitle, _, contact ->
-            Rows.setText(title, contact.name)
-            Rows.setText(subtitle, summary(contact))
+        // Something to press with OK or a tap while contacts are off (guide §2: a starting focus).
+        val items: List<Any> = if (state.running && !state.on) listOf(AllowRow) else state.contacts
+        list.submit(items)
+        list.focusIfNothingFocused(currentFocus)
+    }
+
+    private object AllowRow
+
+    private fun bindRow(row: View, item: Any) {
+        val title = row.findViewById<TextView>(R.id.bc_row_title)
+        val subtitle = row.findViewById<TextView>(R.id.bc_row_subtitle)
+        Rows.setText(row.findViewById(R.id.bc_row_trailing), null)
+        if (item is ContactUi) {
+            Rows.setText(title, item.name)
+            Rows.tone(title, RowTone.Normal)
+            Rows.setText(subtitle, summary(item))
             Rows.tone(subtitle, RowTone.Muted)
-            row.setTag(R.id.bc_list, contact)
-            row.setOnClickListener { showNumbers(contact) }
-        }
-        if (state.running && !state.on) {
-            // Something to press with OK or a tap (guide §2: every screen has a starting focus).
-            Rows.fill(list, listOf(Unit)) { row, title, subtitle, _, _ ->
-                Rows.setText(title, getString(R.string.bc_contacts_allow))
-                Rows.tone(title, RowTone.Accent)
-                Rows.setText(subtitle, null)
-                row.setOnClickListener { allow() }
-            }.forEach { it.post { if (currentFocus == null) it.requestFocus() } }
-        } else if (currentFocus == null) {
-            rows.firstOrNull()?.let { first -> first.post { if (currentFocus == null) first.requestFocus() } }
+        } else {
+            Rows.setText(title, getString(R.string.bc_contacts_allow))
+            Rows.tone(title, RowTone.Accent)
+            Rows.setText(subtitle, null)
         }
     }
 

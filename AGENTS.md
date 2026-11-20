@@ -284,6 +284,11 @@ alpha-only animation.
 
 BusyCall additions:
 
+- **Long lists are recycled ListViews** (`ui/RowList`: Home's call log, Contacts, Blocked
+  calls). The list keeps focus and moves its selection, so a D-pad step isn't a focus change
+  (on Kyocera every focus change runs the keyboard manager's failing `getShwoingNowFlag`, which
+  made lists sluggish). `Rows.fill` is only for short lists. Don't rebuild a list on a timer:
+  Home re-reads the log only when `Bridge.recentsVersion()` changes (owner, 2026-11-20).
 - **Text is larger than the guide's minimums** (owner, 2026-11-20): body 18 sp, labels 16 sp,
   metadata 14 sp, headers 20 sp (`bc_dimens.xml`); ring labels 12 sp so they fit.
 

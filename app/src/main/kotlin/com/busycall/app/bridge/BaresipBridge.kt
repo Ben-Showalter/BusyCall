@@ -177,6 +177,13 @@ object BaresipBridge : Bridge {
         else -> NumberStatus.Connecting // yellow, or white before the first attempt
     }
 
+    override fun recentsVersion(): Long {
+        val (size, newest) = synchronized(BaresipService.callHistory) {
+            BaresipService.callHistory.size to (BaresipService.callHistory.lastOrNull()?.stopTime?.timeInMillis ?: 0L)
+        }
+        return (size.toLong() * 1_000_003L) xor newest xor System.identityHashCode(BaresipService.contacts).toLong()
+    }
+
     override fun recents(limit: Int): List<RecentUi> {
         val history = synchronized(BaresipService.callHistory) { BaresipService.callHistory.toList() }
         return history.asReversed().take(limit).map { h ->

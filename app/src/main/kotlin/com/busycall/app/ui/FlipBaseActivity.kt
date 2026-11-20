@@ -302,7 +302,7 @@ abstract class FlipBaseActivity : Activity() {
                 holdHandler.removeCallbacks(holdRunnable)
                 if (!holdFired && !event.isCanceled) {
                     val handled = onCallOrOk(held = false, callKey = key == LogicalKey.Call)
-                    if (!handled && key == LogicalKey.Ok) currentFocus?.performClick()
+                    if (!handled && key == LogicalKey.Ok) clickFocused()
                 }
                 holdFired = false
             }
@@ -365,6 +365,17 @@ abstract class FlipBaseActivity : Activity() {
     }
 
     /** The phone's home screen; a call carries on (the "On call" bar and notification bring it back). */
+    /** A short OK on a timed screen: click the focused view, or a list's selected row (ui/RowList). */
+    private fun clickFocused() {
+        val focus = currentFocus
+        if (focus is android.widget.AbsListView) {
+            val position = focus.selectedItemPosition
+            if (position >= 0) focus.performItemClick(focus.selectedView, position, focus.selectedItemId)
+        } else {
+            focus?.performClick()
+        }
+    }
+
     protected fun goToPhoneHome() {
         try {
             startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
