@@ -1,6 +1,7 @@
 package com.busycall.app.call
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -8,6 +9,7 @@ import android.view.View
 import android.widget.TextView
 import com.busycall.app.keys.LogicalKey
 import com.busycall.app.ui.FlipBaseActivity
+import com.busycall.app.ui.PlaceMapView
 import com.busycall.app.bridge.Bridges
 import com.tutpro.baresip.R
 
@@ -125,5 +127,18 @@ class IncomingCallActivity : FlipBaseActivity() {
         val shownNumber = CallText.number(call.peerUri)
         number.text = if (shownNumber == call.peerName) "" else shownNumber
         number.visibility = if (number.text.isEmpty()) View.GONE else View.VISIBLE
+        val place = call.place
+        findViewById<TextView>(R.id.bc_call_place).apply {
+            text = place?.name ?: ""
+            visibility = if (place == null) View.GONE else View.VISIBLE
+        }
+        // The map only where it fits: portrait, and not at the largest font sizes (AGENTS §9).
+        val roomy = resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT &&
+            resources.configuration.fontScale < 1.3f
+        findViewById<PlaceMapView>(R.id.bc_call_map).apply {
+            val regions = place?.regions ?: emptyList()
+            visibility = if (roomy && regions.isNotEmpty()) View.VISIBLE else View.GONE
+            show(regions)
+        }
     }
 }

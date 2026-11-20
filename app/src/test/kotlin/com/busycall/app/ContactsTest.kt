@@ -7,7 +7,8 @@ import com.busycall.app.bridge.NumberStatus
 import com.busycall.app.bridge.NumberUi
 import com.busycall.app.bridge.RecentUi
 import com.busycall.app.bridge.Transport
-import com.busycall.app.calllog.CallLogViewModel
+import com.busycall.app.calllog.CallDetailsViewModel
+import com.busycall.app.calllog.DetailAction
 import com.busycall.app.contacts.ContactsViewModel
 import com.busycall.app.dialer.DialTarget
 import com.busycall.app.dialer.DialerViewModel
@@ -151,22 +152,31 @@ class ContactsTest {
         assertEquals("+15550198", vm.firstNumber(anna)?.display)
     }
 
-    // ---- Call log (S6) ----
+    // ---- Call details (OK on a Home row) ----
 
-    @Test fun `call log lists every call and deletes one`() {
+    @Test fun `call details offer add to contacts for an unknown phone number`() {
         val now = 1_700_000_000_000L
-        val missed = RecentUi("Mom", "sip:5550142@pbx", "Office", office.id, CallDirection.In, true, now - 60_000, null, now - 60_000)
-        val out = RecentUi("Desk", "sip:100@pbx", "Office", office.id, CallDirection.Out, false, now - 120_000, now - 120_000, now - 100_000)
-        val bridge = FakeBridge(recents = mutableListOf(missed, out))
-        val vm = CallLogViewModel(bridge, now = { now }, zone = { ZoneId.of("UTC") })
-        val state = vm.state()
-        assertTrue(state.running)
-        assertEquals(2, state.rows.size)
-        assertEquals(TimeLabel.MinutesAgo(1), state.rows[0].time)
-        assertEquals(office.id to "sip:5550142@pbx", vm.callBackTarget(state.rows[0]))
-        vm.delete(state.rows[0])
-        assertEquals(listOf(missed), bridge.deletedRecents)
-        assertEquals(1, vm.state().rows.size)
-        assertFalse(CallLogViewModel(FakeBridge(running = false)).state().running)
+        val missed = RecentUi("(378) 234-3189", "sip:3782343189@pbx", "Office", office.id, CallDirection.In, true, now - 60_000, null, now - 60_000)
+        val bridge = FakeBridge(recents = mutableListOf(missed))
+        val vm = CallDetailsViewModel(missed.peerUri, missed.stopMillis, bridge, now = { now }, zone = { ZoneId.of("UTC") })
+        val state = vm.state()!!
+        assertEquals(listOf(DetailAction.AddToContacts, DetailAction.Block, DetailAction.Delete), state.actions)
+        assertEquals(TimeLabel.MinutesAgo(1), state.time)
+        assertEquals("3782343189", vm.contactNumber(state.recent))
+        assertEquals(office.id to missed.peerUri, vm.callBackTarget(state.recent))
+        vm.block(state.recent)
+        assertEquals(listOf(missed.peerUri), bridge.blockedCallers)
+        vm.delete(state.recent)
+        assertNull(vm.state()) // gone: the screen closes
+    }
+
+    @Test fun `call details of a contact open it, and an extension has no contact actions`() {
+        val now = 1_700_000_000_000L
+        val anna = RecentUi("Anna", "tel:+13782343189", "Office", office.id, CallDirection.Out, false, now, now, now + 5, inContacts = true)
+        val desk = RecentUi("Desk", "sip:100@pbx", "Office", office.id, CallDirection.Out, false, now, now, now + 9)
+        val bridge = FakeBridge(recents = mutableListOf(anna, desk))
+        assertEquals(DetailAction.OpenContact, CallDetailsViewModel(anna.peerUri, anna.stopMillis, bridge).state()!!.actions.first())
+        assertEquals(listOf(DetailAction.Block, DetailAction.Delete), CallDetailsViewModel(desk.peerUri, desk.stopMillis, bridge).state()!!.actions)
+        assertNull(CallDetailsViewModel(desk.peerUri, desk.stopMillis, FakeBridge(running = false)).state())
     }
 }

@@ -26,7 +26,7 @@ class RegistrationReasonTest {
         val n = NumberUi("sip:104@pbx", "Office", "104", "pbx", Transport.UDP, NumberStatus.NoConnection, 0, true,
             NumberProblem.WrongPassword)
         val bridge = FakeBridge(numbers = mutableListOf(n))
-        assertEquals(NumberProblem.WrongPassword, HomeViewModel(bridge).state().numbers.single().problem)
+        assertEquals(NumberProblem.WrongPassword, HomeViewModel(bridge).state().trouble.single().problem)
         assertEquals(NumberProblem.WrongPassword, NumbersViewModel(bridge).state(false).numbers.single().problem)
     }
 }

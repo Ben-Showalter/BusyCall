@@ -11,6 +11,7 @@ import com.busycall.app.bridge.Bridges
 import com.busycall.app.bridge.CallState
 import com.busycall.app.dialer.DialerActivity
 import com.busycall.app.keys.LogicalKey
+import com.busycall.app.ui.CallScreens
 import com.busycall.app.ui.FlipBaseActivity
 import com.busycall.app.ui.MenuItem
 import com.tutpro.baresip.R
@@ -99,11 +100,13 @@ class InCallActivity : FlipBaseActivity() {
     override fun onResume() {
         super.onResume()
         resumed = true
+        CallScreens.inCallInFront = true // END here hangs up (keys/EndKeyService)
         refresh()
     }
 
     override fun onPause() {
         resumed = false
+        CallScreens.inCallInFront = false
         handler.removeCallbacks(tick)
         super.onPause()
     }

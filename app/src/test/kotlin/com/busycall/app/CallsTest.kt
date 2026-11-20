@@ -316,7 +316,7 @@ class CallsTest {
         assertEquals(Route.Dialer, CallRouter.decide(null, Intent.ACTION_DIAL, null, false, dataScheme = "tel"))
         assertEquals(Route.Dialer, CallRouter.decide(null, Intent.ACTION_CALL, null, false, dataScheme = "tel"))
         assertEquals(Route.Dialer, CallRouter.decide(null, Intent.ACTION_VIEW, null, false, dataScheme = "sip"))
-        assertEquals(Route.CallLog, CallRouter.decide(null, Intent.ACTION_VIEW, null, false, mimeType = "vnd.android.cursor.dir/calls"))
+        assertEquals(Route.Home, CallRouter.decide(null, Intent.ACTION_VIEW, null, false, mimeType = "vnd.android.cursor.dir/calls"))
         assertEquals(Route.Upstream, CallRouter.decide(null, Intent.ACTION_VIEW, null, false, dataScheme = "https"))
     }
 

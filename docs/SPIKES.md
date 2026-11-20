@@ -62,6 +62,21 @@ _Built 2026-11-20, not tested yet._ Settings › Use for phone (SIM) calls. Reco
 5. CALL/END and the stock launcher's digit keys with BusyCall as the dialer.
 6. Switch back to the stock dialer; everything works again.
 
+## S8 — END key service and no status notification (E4810)
+_Built 2026-11-20, not tested yet._ Settings › END key and staying ready › Open settings ›
+Call END key › On. Record:
+1. Does the service see END (`KEYCODE_ENDCALL`) at all? On the In call screen END should hang
+   up. **If it never does:** Android consumes ENDCALL before the accessibility filter on this
+   phone; fall back to hanging up in InCallActivity's `onUserLeaveHint` (END = Home there),
+   ignoring our own Home softkey, and record it in the guide's docs/keys.md.
+2. A call, then another app (Contacts): END → the phone's Home, then the call screen comes back.
+3. A ringing call in another app: END declines.
+4. No call: END does what it always did, and BusyCall doesn't open.
+5. The BusyCall status icon is gone; a call still shows its call notification.
+6. Still registered the next morning, after closing the flip, screen off, and after a reboot
+   (does the service come back by itself?).
+7. Turning the service off brings the status notification back at once.
+
 ## S2 — CALL and END keys
 _Not started._ Record per phone: keycode and scan code for CALL, END, outer END,
 headset button; whether END reaches the app during a call; whether Android's own

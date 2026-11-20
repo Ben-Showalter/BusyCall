@@ -45,8 +45,28 @@
                 style="@style/BcText.Meta"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:gravity="center" />
+
+            <!-- Where the number is from ("Ohio") and a small map (owner, 2026-11-20). -->
+            <TextView
+                android:id="@+id/bc_call_place"
+                style="@style/BcText.Meta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:gravity="center"
-                android:paddingBottom="8dp" />
+                android:textColor="@color/bc_accent_soft"
+                android:visibility="gone" />
+
+            <com.busycall.app.ui.PlaceMapView
+                android:id="@+id/bc_call_map"
+                android:layout_width="match_parent"
+                android:layout_height="72dp"
+                android:layout_marginTop="2dp"
+                android:visibility="gone" />
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="8dp" />
 
             <TextView
                 android:id="@+id/bc_call_answer"

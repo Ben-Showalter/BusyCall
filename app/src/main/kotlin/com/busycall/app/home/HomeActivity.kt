@@ -6,6 +6,8 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
+import android.view.LayoutInflater
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -14,17 +16,17 @@ import com.busycall.app.bridge.Bridges
 import com.busycall.app.bridge.CallDirection
 import com.busycall.app.bridge.NumberProblem
 import com.busycall.app.bridge.NumberStatus
-import com.busycall.app.bridge.PlaceResult
 import com.busycall.app.bridge.Bridge
-import com.busycall.app.call.InCallActivity
+import com.busycall.app.call.Calling
+import com.busycall.app.calllog.CallDetailsActivity
 import com.busycall.app.data.Prefs
-import com.busycall.app.calllog.CallLogActivity
 import com.busycall.app.contacts.ContactsActivity
 import com.busycall.app.dialer.DialerActivity
 import com.busycall.app.numbers.DraftExtras
 import com.busycall.app.numbers.NumberSetupActivity
 import com.busycall.app.numbers.NumbersActivity
 import com.busycall.app.settings.SettingsActivity
+import com.busycall.app.ui.EndKeySetup
 import com.busycall.app.ui.FlipBaseActivity
 import com.busycall.app.ui.MenuItem
 import com.busycall.app.ui.RowTone
@@ -33,8 +35,10 @@ import com.busycall.app.ui.Words
 import com.tutpro.baresip.R
 
 /**
- * Home (PLAN.md S1): the user's numbers with live status and voicemail, then recent calls.
- * BusyCall's launcher screen. Renders [HomeState]; logic is in [HomeViewModel].
+ * Home (PLAN.md S1) is the call log (owner, 2026-11-20): every call, newest first, with a green or
+ * red phone icon, where the number is from and which of the user's numbers it was on. Above it
+ * only numbers that can't connect (AGENTS §6). OK opens Call details; CALL (or holding OK) calls
+ * back from the number the call was on. BusyCall's launcher screen.
  */
 class HomeActivity : FlipBaseActivity() {
 
@@ -46,8 +50,8 @@ class HomeActivity : FlipBaseActivity() {
     private lateinit var message: TextView
     private lateinit var retry: TextView
     private lateinit var numbers: LinearLayout
-    private lateinit var recents: LinearLayout
-    private lateinit var recentsEmpty: TextView
+    private lateinit var calls: LinearLayout
+    private lateinit var callsEmpty: TextView
 
     // Status changes arrive from baresip asynchronously; a light refresh keeps the screen live.
     private val tick = object : Runnable {
@@ -58,7 +62,7 @@ class HomeActivity : FlipBaseActivity() {
         }
     }
 
-    override val handlesCallKey = true
+    override val usesCallHold = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,8 +72,8 @@ class HomeActivity : FlipBaseActivity() {
         message = findViewById(R.id.bc_home_message)
         retry = findViewById(R.id.bc_home_retry)
         numbers = findViewById(R.id.bc_home_numbers)
-        recents = findViewById(R.id.bc_home_recents)
-        recentsEmpty = findViewById(R.id.bc_home_recents_empty)
+        calls = findViewById(R.id.bc_home_calls)
+        callsEmpty = findViewById(R.id.bc_home_calls_empty)
         retry.setOnClickListener {
             viewModel.permissionsDenied = false
             Bridges.current.startService(this)
@@ -100,8 +104,16 @@ class HomeActivity : FlipBaseActivity() {
                 bridge.turnContactsOn(this) // shows Android's prompt; the answer comes back below
             }
             ContactsStep.SwitchOn -> bridge.turnContactsOn(this)
-            ContactsStep.Wait, ContactsStep.Nothing -> {}
+            ContactsStep.Nothing -> offerEndKey()
+            ContactsStep.Wait -> {}
         }
+    }
+
+    /** After contacts (guide §5: one item at a time): offer the END-key service once ever. */
+    private fun offerEndKey() {
+        if (Prefs.wasEndKeyAsked(this) || EndKeySetup.isOn(this)) return
+        Prefs.setEndKeyAsked(this)
+        EndKeySetup.offer(this)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -123,7 +135,6 @@ class HomeActivity : FlipBaseActivity() {
 
     override fun optionsItems(): List<MenuItem> = listOf(
         MenuItem(getString(R.string.bc_menu_contacts)) { startActivity(Intent(this, ContactsActivity::class.java)) },
-        MenuItem(getString(R.string.bc_menu_calllog)) { startActivity(Intent(this, CallLogActivity::class.java)) },
         MenuItem(getString(R.string.bc_menu_blocked)) { startActivity(Intent(this, com.busycall.app.blocking.BlockedActivity::class.java)) },
         MenuItem(getString(R.string.bc_menu_numbers)) { startActivity(Intent(this, NumbersActivity::class.java)) },
         MenuItem(getString(R.string.bc_menu_classic)) { Bridges.current.openClassicScreens(this) },
@@ -135,17 +146,20 @@ class HomeActivity : FlipBaseActivity() {
         startActivity(Intent(this, DialerActivity::class.java).putExtra(DialerActivity.EXTRA_NUMBER, char.toString()))
     }
 
-    /** CALL on a recent call calls back, from the number it was on (AGENTS §6). */
-    override fun onCallKey() {
-        val recent = currentFocus?.getTag(R.id.bc_row_title) as? HomeRecentRow ?: return
-        callBack(recent)
+    private fun focusedCall(): HomeCallRow? = currentFocus?.getTag(R.id.bc_home_calls) as? HomeCallRow
+
+    /** CALL or a held OK on a call calls back; a short OK opens Call details (the row's click). */
+    override fun onCallOrOk(held: Boolean, callKey: Boolean): Boolean {
+        val row = focusedCall() ?: return false
+        if (!held && !callKey) return false
+        callBack(row)
+        return true
     }
 
-    private fun callBack(recent: HomeRecentRow) {
-        when (Bridges.current.placeCall(this, recent.numberId, recent.peerUri)) {
-            PlaceResult.Placed -> startActivity(Intent(this, InCallActivity::class.java))
-            is PlaceResult.Failed -> Toast.makeText(this, R.string.bc_dialer_failed, Toast.LENGTH_LONG).show()
-        }
+    /** From the number the call was on, no picker (AGENTS §6); emergency numbers follow their rule. */
+    private fun callBack(row: HomeCallRow) {
+        val (fromId, dial) = viewModel.callBackTarget(row)
+        Calling.start(this, dial, row.recent.peerName, held = false, callBackFrom = fromId)
     }
 
     private fun render(state: HomeState) {
@@ -158,16 +172,13 @@ class HomeActivity : FlipBaseActivity() {
             null -> showMessage(null, retryVisible = false)
         }
 
-        Rows.fill(numbers, state.numbers) { row, title, subtitle, trailing, item ->
-            Rows.setText(title, getString(R.string.bc_number_title, item.label, item.number))
+        // Only what can't connect, with its reason (AGENTS §6: never hidden; PLAN S10).
+        Rows.fill(numbers, state.trouble) { row, title, subtitle, _, item ->
+            Rows.setText(title, getString(R.string.bc_home_trouble, getString(R.string.bc_number_title, item.label, item.number)))
             Words.dot(title, item.status)
-            // The reason in plain words while it can't connect (PLAN S10).
-            Rows.setText(subtitle, item.problem?.let { Words.problem(this, it) })
+            Rows.tone(title, RowTone.Alert)
+            Rows.setText(subtitle, item.problem?.let { Words.problem(this, it) } ?: getString(R.string.bc_home_trouble_retry))
             Rows.tone(subtitle, RowTone.Alert)
-            val voicemail = if (item.voicemailNew > 0)
-                resources.getQuantityString(R.plurals.bc_voicemail_count, item.voicemailNew, item.voicemailNew) else null
-            Rows.setText(trailing, voicemail ?: Words.status(this, item.status))
-            Rows.tone(trailing, if (voicemail != null) RowTone.Accent else Words.statusTone(item.status))
             row.setOnClickListener {
                 if (item.problem == NumberProblem.WrongPassword) {
                     startActivity(Intent(this, NumberSetupActivity::class.java).putExtra(DraftExtras.EXTRA_EDIT_ID, item.id))
@@ -175,7 +186,7 @@ class HomeActivity : FlipBaseActivity() {
                 else startActivity(Intent(this, NumbersActivity::class.java))
             }
         }
-        if (state.numbers.isEmpty() && state.problem == null) {
+        if (state.noNumbers && state.problem == null) {
             // An empty home still has one focusable thing to do.
             Rows.fill(numbers, listOf(Unit)) { row, title, subtitle, _, _ ->
                 Rows.setText(title, getString(R.string.bc_numbers_add))
@@ -185,33 +196,60 @@ class HomeActivity : FlipBaseActivity() {
             }
         }
 
-        Rows.fill(recents, state.recents) { row, title, subtitle, _, item ->
-            Rows.setText(title, item.peerName)
-            Rows.tone(title, if (item.missed) RowTone.Alert else RowTone.Normal)
-            val kind = getString(
-                when {
-                    item.missed -> R.string.bc_recent_missed
-                    item.direction == CallDirection.In -> R.string.bc_recent_incoming
-                    else -> R.string.bc_recent_outgoing
-                }
-            )
-            val onNumber = getString(
-                if (item.direction == CallDirection.In) R.string.bc_recent_to else R.string.bc_recent_from,
-                item.numberLabel,
-            )
-            val time = Words.time(this, item.time)
-            Rows.setText(subtitle, getString(R.string.bc_recent_line, kind, onNumber, time))
-            row.setTag(R.id.bc_row_title, item)
-            row.setOnClickListener { callBack(item) }
-        }
-        recentsEmpty.visibility = if (state.recents.isEmpty() && state.problem == null) View.VISIBLE else View.GONE
+        fillCalls(state.calls)
+        callsEmpty.visibility = if (state.calls.isEmpty() && state.problem == null) View.VISIBLE else View.GONE
 
         // Deterministic starting focus (guide §2): the first row, only if nothing has focus yet.
         if (currentFocus == null) {
             val first = (0 until numbers.childCount).map { numbers.getChildAt(it) }.firstOrNull()
+                ?: (0 until calls.childCount).map { calls.getChildAt(it) }.firstOrNull()
                 ?: (if (retry.visibility == View.VISIBLE) retry else null)
             first?.post { if (currentFocus == null) first.requestFocus() }
         }
+    }
+
+    /** The call rows (bc_call_row): icon, name, "Ohio · to Office · 9:42". OK opens Call details. */
+    private fun fillCalls(items: List<HomeCallRow>) {
+        val focusedIndex = (0 until calls.childCount).firstOrNull { calls.getChildAt(it).hasFocus() }
+        calls.removeAllViews()
+        val inflater = LayoutInflater.from(this)
+        val rows = items.map { item ->
+            val r = item.recent
+            val row = inflater.inflate(R.layout.bc_call_row, calls, false)
+            row.findViewById<ImageView>(R.id.bc_call_row_icon).apply {
+                setImageResource(
+                    when (item.icon) {
+                        CallIcon.In -> R.drawable.bc_ic_call_in
+                        CallIcon.Out -> R.drawable.bc_ic_call_out
+                        CallIcon.Missed -> R.drawable.bc_ic_call_missed
+                    }
+                )
+                contentDescription = getString(
+                    when (item.icon) {
+                        CallIcon.In -> R.string.bc_recent_incoming
+                        CallIcon.Out -> R.string.bc_recent_outgoing
+                        CallIcon.Missed -> R.string.bc_recent_missed
+                    }
+                )
+            }
+            row.findViewById<TextView>(R.id.bc_call_row_name).apply {
+                text = r.peerName
+                Rows.tone(this, if (r.missed) RowTone.Alert else RowTone.Normal)
+            }
+            val onNumber = getString(
+                if (r.direction == CallDirection.In) R.string.bc_recent_to else R.string.bc_recent_from,
+                r.numberLabel,
+            )
+            val time = Words.time(this, item.time)
+            row.findViewById<TextView>(R.id.bc_call_row_line).text = r.place?.let {
+                getString(R.string.bc_recent_line, it.name, onNumber, time)
+            } ?: getString(R.string.bc_recent_line_short, onNumber, time)
+            row.setTag(R.id.bc_home_calls, item)
+            row.setOnClickListener { CallDetailsActivity.open(this, r) }
+            calls.addView(row)
+            row
+        }
+        if (focusedIndex != null && rows.isNotEmpty()) rows[minOf(focusedIndex, rows.size - 1)].requestFocus()
     }
 
     private fun showMessage(text: String?, retryVisible: Boolean) {

@@ -44,15 +44,17 @@
         <item quantity="other">%d voicemail</item>
     </plurals>
 
-    <!-- Home -->
-    <string name="bc_home_my_numbers">My numbers</string>
-    <string name="bc_home_recent">Recent</string>
     <!-- Footer hint on Home. -->
-    <string name="bc_home_hint">0–9 to dial</string>
+    <string name="bc_home_hint">OK: details · CALL: call back</string>
     <string name="bc_home_starting">Starting the phone service…</string>
     <string name="bc_home_permissions_denied">BusyCall needs the microphone (and notifications) to make and receive calls. Press Retry to allow them.</string>
     <string name="bc_home_no_numbers">No numbers yet</string>
-    <string name="bc_home_no_recents">No calls yet</string>
+    <string name="bc_home_no_recents">No calls yet. Type a number to call.</string>
+    <!-- Home, a number that can't connect (only those are listed). %1$s = "Office · 104". -->
+    <string name="bc_home_trouble">%1$s can\'t connect</string>
+    <string name="bc_home_trouble_retry">OK to try again</string>
+    <!-- A call row without a place. %1$s = "to Office", %2$s = "9:42". -->
+    <string name="bc_recent_line_short">%1$s · %2$s</string>
     <string name="bc_recent_missed">Missed</string>
     <string name="bc_recent_incoming">Incoming</string>
     <string name="bc_recent_outgoing">Outgoing</string>
@@ -60,7 +62,7 @@
     <string name="bc_recent_to">to %1$s</string>
     <!-- Which of the user's numbers a call went out from. %1$s = "Office". -->
     <string name="bc_recent_from">from %1$s</string>
-    <!-- Recent-call line: kind, number, time, e.g. "Missed · to Home · 10 min ago". -->
+    <!-- Call line: kind or place, number, time, e.g. "Missed · to Home · 10 min ago" or "Ohio · to Home · 9:42". -->
     <string name="bc_recent_line">%1$s · %2$s · %3$s</string>
 
     <!-- Why a number can't connect (PLAN S10), under the number on Home and Numbers. -->
@@ -73,7 +75,6 @@
 
     <!-- Menus -->
     <string name="bc_menu_contacts">Contacts</string>
-    <string name="bc_menu_calllog">Call log</string>
     <string name="bc_menu_numbers">Numbers</string>
     <!-- Temporary: opens baresip's original screens, for calling until BusyCall's own exist. -->
     <string name="bc_menu_classic">Classic screens</string>
@@ -353,11 +354,18 @@
     <!-- Numbers › Phone (SIM) while BusyCall is the phone's dialer. %1$s = the blocking mode. -->
     <string name="bc_sim_blocking_line">SIM calls use BusyCall · Block: %1$s</string>
 
-    <!-- S6 Call log -->
-    <string name="bc_calllog_title">Call log</string>
-    <string name="bc_calllog_footer">CALL calls back</string>
-    <string name="bc_calllog_empty">No calls yet.</string>
     <string name="bc_calllog_call_back">Call back</string>
+    <!-- Call details (OK on a Home row). -->
+    <string name="bc_details_title">Call details</string>
+    <string name="bc_details_footer">CALL calls back</string>
+    <!-- Where the number was issued (its area code), not where the caller is. %1$s = "Ohio". -->
+    <string name="bc_details_from">Number from %1$s</string>
+    <string name="bc_details_add_contact">Add to contacts</string>
+    <string name="bc_details_new_contact">New contact</string>
+    <string name="bc_details_existing_contact">Add to a contact…</string>
+    <string name="bc_details_open_contact">Open contact</string>
+    <string name="bc_details_no_contact">That contact can\'t be found any more.</string>
+    <string name="bc_details_no_contacts_app">This phone has no contacts app BusyCall can open.</string>
     <string name="bc_calllog_delete">Delete</string>
 
     <!-- Number setup: Network help for call audio behind NAT (e.g. Grandstream RemoteConnect). -->
@@ -410,5 +418,18 @@
     <string name="bc_settings_side_left">Left softkey (OK to change)</string>
     <string name="bc_settings_about">About</string>
     <string name="bc_settings_about_sub">Version, licenses</string>
-    <string name="bc_about_text">BusyCall is built on baresip-studio, Copyright (c) 2018 TutPro Inc., and the baresip library. Distributed under the BSD-3-Clause license.</string>
+    <string name="bc_about_text">BusyCall is built on baresip-studio, Copyright (c) 2018 TutPro Inc., and the baresip library. Distributed under the BSD-3-Clause license. Area codes from libphonenumber (Apache License 2.0); map shapes from Natural Earth (public domain).</string>
+
+    <!-- END key service (keys/EndKeyService): an accessibility service. Shown in Android's Accessibility list. -->
+    <string name="bc_end_service_label">Call END key</string>
+    <string name="bc_end_service_description">Lets the END key hang up and decline calls, and brings the call screen back from other apps during a call. It also keeps the app ready for calls without a notification. It reads only the END key, nothing on screen.</string>
+    <string name="bc_end_setup_title">END key and staying ready</string>
+    <!-- %1$s = the app name. -->
+    <string name="bc_end_setup_message">Let the END key end calls, and keep %1$s ready for calls without a notification? Android asks you to switch this on yourself.</string>
+    <string name="bc_end_setup_open">Open settings</string>
+    <!-- The D-pad path in Android's Accessibility settings. -->
+    <string name="bc_end_setup_path">Choose Call END key, then switch it on.</string>
+    <string name="bc_settings_end_key">END key and staying ready</string>
+    <string name="bc_settings_end_key_on">On: END ends calls; no notification</string>
+    <string name="bc_settings_end_key_off">Off: END only goes home during a call</string>
 </resources>

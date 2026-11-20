@@ -31,4 +31,11 @@
     <color name="bc_status_ok">#FF4CD964</color>
     <color name="bc_status_wait">#FFFFD54F</color>
     <color name="bc_status_off">#FFFF6B6B</color>
+
+    <!-- Call log icons: green in/out, red missed (each row also says it in words). -->
+    <color name="bc_icon_call">#FF4CD964</color>
+    <color name="bc_icon_missed">#FFFF6B6B</color>
+
+    <!-- Where-from map: state/province lines (the caller's region is filled with bc_accent). -->
+    <color name="bc_map_line">#FF5A5A5E</color>
 </resources>

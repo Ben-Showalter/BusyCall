@@ -176,7 +176,7 @@
             android:exported="false"
             android:theme="@style/Theme.BusyCall" />
         <activity
-            android:name="com.busycall.app.calllog.CallLogActivity"
+            android:name="com.busycall.app.calllog.CallDetailsActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize"
             android:exported="false"
             android:theme="@style/Theme.BusyCall" />
@@ -185,6 +185,19 @@
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize"
             android:exported="false"
             android:theme="@style/Theme.BusyCall" />
+        <!-- BusyCall: END during a call, and staying alive with no status notification (keys/EndKeyService). -->
+        <service
+            android:name="com.busycall.app.keys.EndKeyService"
+            android:exported="true"
+            android:label="@string/bc_end_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/bc_end_key_service" />
+        </service>
         <activity
             android:name="com.busycall.app.settings.SettingsActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize"

@@ -8,7 +8,6 @@ import android.provider.Settings
 import com.busycall.app.bridge.Bridge
 import com.busycall.app.bridge.Bridges
 import com.busycall.app.bridge.CallState
-import com.busycall.app.calllog.CallLogActivity
 import com.busycall.app.dialer.DialerActivity
 import com.busycall.app.home.HomeActivity
 
@@ -25,7 +24,7 @@ import com.busycall.app.home.HomeActivity
  */
 object CallRouter {
 
-    enum class Route { Incoming, InCall, Home, Dialer, CallLog, Upstream }
+    enum class Route { Incoming, InCall, Home, Dialer, Upstream }
 
     /** Pure decision, unit-tested. [callState] is the state of the call the intent names, if any. */
     fun decide(
@@ -50,7 +49,8 @@ object CallRouter {
                 // BusyCall's Dialer with the number filled in. Never calls by itself.
                 intentAction == Intent.ACTION_DIAL && dataScheme == null -> Route.Dialer
                 intentAction in DIAL_ACTIONS && (dataScheme == "tel" || dataScheme == "sip") -> Route.Dialer
-                intentAction == Intent.ACTION_VIEW && mimeType == CALLS_MIME -> Route.CallLog
+                // "Show the call log" (other apps, the stock launcher): Home is the call log.
+                intentAction == Intent.ACTION_VIEW && mimeType == CALLS_MIME -> Route.Home
                 else -> Route.Upstream
             }
             else -> Route.Upstream
@@ -75,7 +75,6 @@ object CallRouter {
             Route.Dialer -> Intent(activity, DialerActivity::class.java).also { dial ->
                 dialNumber(intent)?.let { dial.putExtra(DialerActivity.EXTRA_NUMBER, it) }
             }
-            Route.CallLog -> Intent(activity, CallLogActivity::class.java)
             else -> Intent(activity, HomeActivity::class.java)
         }
         if (call != null) target.putExtra(EXTRA_CALL_ID, call.id)

@@ -202,12 +202,12 @@ Each screen fits about one 240×320 screen. Previews:
 
 | # | Screen | Contents | Options menu |
 |---|---|---|---|
-| S1 | **Home** | "My numbers" with live status and voicemail count each; Recent calls (each shows which number it was on). A digit jumps to S2. | Contacts · Call log · Voicemail… · Numbers · Settings |
+| S1 | **Home = call log** (owner, 2026-11-20) | Every call with a green/red phone-and-arrow icon, where the number is from ("Ohio") and which number it was on; above it only numbers that can't connect. A digit jumps to S2; OK opens S6; CALL calls back. | Contacts · Blocked calls · Numbers · Settings |
 | S2 | **Dialer** | "Number or name" field (digits only; the keys' letters find names), dropdown of up to 3 contact matches (§3.3), "from <number>" row (◀ ▶), Call button; on-screen pad on touch-only phones | Add to contacts · Call from… |
 | S3 | **Contacts** | The phone's contacts, scrolled with the D-pad; 2–9 jumps to a letter; OK shows all of a contact's numbers | Call · Call from… · Open in phone's Contacts |
 | S4 | **Incoming call** | "to <number>", caller name/number, Answer and Decline. Full-screen over a closed flip and the lock screen. | Silence |
 | S5 | **In call** | Timer, "from <number>", name, audio route, Speaker / Mute / Keypad, End call | Speaker · Mute · Hold · Transfer · Keypad · Hang up |
-| S6 | **Call log** | All calls; missed in red; which number each was on | Call back · Call from… · Add to contacts · Delete |
+| S6 | **Call details** | One call: name, number, "Number from Ohio" with a small map, the call; Call back · Add to contacts (New contact / Add to a contact…) or Open contact · Block · Delete | — |
 | S7 | **Numbers** | Every account with status; ★ marks the default for the Dialer; "+ Add a number" opens a menu: **Type it in** (S8) · **Paste setup link** · **Scan QR setup code** (§5.1) | Make default · Edit · Turn off · Delete |
 | S7b | **Scan: code ready?** | Dialog on choosing Scan QR setup code: "Do you have a QR setup code ready?" · **Yes, scan it** (opens the scanner) · **No, help me set it up** (S7c) | — |
 | S7c | **Make a setup code** | Step 1: **Save setup page to phone** button + result line; steps 2–4: "Move busycall-setup.html to a computer over USB, Bluetooth, or SD card", open it and fill it in, then come back and scan (§5.1) | Save again · Save to SD card · Send by Bluetooth |

@@ -10,6 +10,7 @@ object Prefs {
     private const val KEY_MENU_KEY_SEEN = "menu_key_seen"
 
     private const val KEY_CONTACTS_ASKED = "contacts_asked"
+    private const val KEY_END_KEY_ASKED = "end_key_asked"
     private const val KEY_PLUS_RULE = "plus_rule:"
     private const val KEY_PLUS_PREFIX = "plus_prefix:"
     private const val KEY_PARK = "park_number:"
@@ -34,6 +35,13 @@ object Prefs {
 
     fun setContactsAsked(ctx: Context) {
         prefs(ctx).edit().putBoolean(KEY_CONTACTS_ASKED, true).apply()
+    }
+
+    /** The END-key service was offered once at startup (keys/EndKeyService). */
+    fun wasEndKeyAsked(ctx: Context): Boolean = prefs(ctx).getBoolean(KEY_END_KEY_ASKED, false)
+
+    fun setEndKeyAsked(ctx: Context) {
+        prefs(ctx).edit().putBoolean(KEY_END_KEY_ASKED, true).apply()
     }
 
     /** "Numbers starting with +" of number [aor]: (rule key, prefix). Nulls before init or if never set. */

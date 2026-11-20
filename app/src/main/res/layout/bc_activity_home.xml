@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Home (PLAN.md S1): my numbers with status, then recent calls. Content scrolls by focus only. -->
+<!-- Home (PLAN.md S1) is the call log; above it only numbers that can't connect. Scrolls by focus only. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -45,12 +45,7 @@
                 android:text="@string/bc_retry"
                 android:visibility="gone" />
 
-            <TextView
-                style="@style/BcText.Section"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/bc_home_my_numbers" />
-
+            <!-- Only numbers that can't connect (AGENTS §6), or "+ Add a number". -->
             <LinearLayout
                 android:id="@+id/bc_home_numbers"
                 android:layout_width="match_parent"
@@ -58,27 +53,22 @@
                 android:descendantFocusability="afterDescendants"
                 android:orientation="vertical" />
 
-            <TextView
-                style="@style/BcText.Section"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/bc_home_recent" />
-
+            <!-- The call log: bc_call_row each, newest first. -->
             <LinearLayout
-                android:id="@+id/bc_home_recents"
+                android:id="@+id/bc_home_calls"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:descendantFocusability="afterDescendants"
                 android:orientation="vertical" />
 
             <TextView
-                android:id="@+id/bc_home_recents_empty"
+                android:id="@+id/bc_home_calls_empty"
                 style="@style/BcText.Meta"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:maxLines="2"
                 android:paddingStart="@dimen/bc_gutter"
-                android:paddingTop="4dp"
+                android:paddingTop="8dp"
                 android:text="@string/bc_home_no_recents"
                 android:visibility="gone" />
         </LinearLayout>

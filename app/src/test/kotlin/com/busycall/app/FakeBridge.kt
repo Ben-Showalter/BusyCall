@@ -105,9 +105,11 @@ class FakeBridge(
         connected.add(callIdA to callIdB); return connectResult
     }
     override fun parkNumber(numberId: String): String = parkNumbers[numberId] ?: com.busycall.app.bridge.DEFAULT_PARK_NUMBER
-    override fun answer(activity: Activity, callId: Long) { answered.add(callId) }
-    override fun decline(activity: Activity, callId: Long) { declined.add(callId) }
-    override fun hangup(activity: Activity, callId: Long) { hungUp.add(callId) }
+    override fun answer(ctx: android.content.Context, callId: Long) { answered.add(callId) }
+    override fun decline(ctx: android.content.Context, callId: Long) { declined.add(callId) }
+    override fun hangup(ctx: android.content.Context, callId: Long) { hungUp.add(callId) }
+    var alive = false
+    override fun setKeptAlive(alive: Boolean) { this.alive = alive }
     override fun sendDigit(callId: Long, digit: Char) { digits.append(digit) }
     override fun isMuted() = micMuted
     override fun setMuted(muted: Boolean) { micMuted = muted }
@@ -127,6 +129,9 @@ class FakeBridge(
     override fun hasContactsPermission(ctx: android.content.Context) = contactsPermission
     override fun turnContactsOn(activity: Activity): Boolean { contactsAreOn = true; return true }
     override fun contacts(): List<ContactUi> = if (contactsAreOn) contacts.toList() else emptyList()
+    val places = mutableMapOf<String, com.busycall.app.bridge.Place>()
+    override fun placeOf(peerUri: String) = places[peerUri]
+    override fun contactUri(ctx: android.content.Context, peerUri: String): String? = null
     override fun deleteRecent(recent: RecentUi) { deletedRecents.add(recent); recents.remove(recent) }
 
     fun setState(callId: Long, state: CallState) {

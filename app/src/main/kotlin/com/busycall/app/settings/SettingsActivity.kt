@@ -10,6 +10,7 @@ import com.busycall.app.bridge.Bridges
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.busycall.app.data.Prefs
+import com.busycall.app.ui.EndKeySetup
 import com.busycall.app.ui.FlipBaseActivity
 import com.busycall.app.ui.Menus
 import com.busycall.app.ui.RowTone
@@ -17,8 +18,8 @@ import com.busycall.app.ui.Rows
 import com.tutpro.baresip.R
 
 /**
- * Settings (PLAN.md S9): Use for phone (SIM) calls, which side the Options key is on, and
- * About/licenses.
+ * Settings (PLAN.md S9): Use for phone (SIM) calls, the END key (and staying ready without a
+ * notification), which side the Options key is on, and About/licenses.
  * Audio and update settings come later.
  */
 class SettingsActivity : FlipBaseActivity() {
@@ -34,7 +35,7 @@ class SettingsActivity : FlipBaseActivity() {
         list.getChildAt(0)?.let { first -> first.post { if (currentFocus == null) first.requestFocus() } }
     }
 
-    private enum class Item { PhoneDialer, OptionsSide, About }
+    private enum class Item { PhoneDialer, EndKey, OptionsSide, About }
 
     override fun onResume() {
         super.onResume()
@@ -91,6 +92,14 @@ class SettingsActivity : FlipBaseActivity() {
                     Rows.setText(subtitle, getString(if (on) R.string.bc_settings_phone_dialer_on else R.string.bc_settings_phone_dialer_off))
                     Rows.tone(subtitle, RowTone.Muted)
                     row.setOnClickListener { togglePhoneDialer() }
+                }
+                Item.EndKey -> {
+                    val on = EndKeySetup.isOn(this)
+                    Rows.setText(title, getString(R.string.bc_settings_end_key))
+                    Rows.setText(subtitle, getString(if (on) R.string.bc_settings_end_key_on else R.string.bc_settings_end_key_off))
+                    Rows.tone(subtitle, RowTone.Muted)
+                    // On or off, both happen in Android's Accessibility settings.
+                    row.setOnClickListener { if (on) EndKeySetup.open(this) else EndKeySetup.offer(this) }
                 }
                 Item.OptionsSide -> {
                     Rows.setText(title, getString(R.string.bc_settings_options_side))

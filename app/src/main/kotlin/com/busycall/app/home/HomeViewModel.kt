@@ -2,6 +2,7 @@ package com.busycall.app.home
 
 import com.busycall.app.bridge.Bridge
 import com.busycall.app.bridge.Bridges
+import com.busycall.app.bridge.NumberStatus
 import com.busycall.app.ui.TimeText
 import java.time.ZoneId
 
@@ -21,23 +22,20 @@ class HomeViewModel(
         if (!bridge.isRunning()) return HomeState(problem = HomeProblem.Starting)
         val nowMillis = now()
         val zoneId = zone()
+        val numbers = bridge.numbers()
         return HomeState(
-            numbers = bridge.numbers().map {
+            trouble = numbers.filter { it.status == NumberStatus.NoConnection }.map {
                 HomeNumberRow(it.id, it.label, it.number, it.status, it.voicemailNew, it.isDefault, it.problem)
             },
-            recents = bridge.recents(RECENT_LIMIT).map {
-                HomeRecentRow(
-                    peerName = it.peerName,
-                    peerUri = it.peerUri,
-                    numberLabel = it.numberLabel,
-                    numberId = it.numberId,
-                    direction = it.direction,
-                    missed = it.missed,
-                    time = TimeText.label(it.timeMillis, nowMillis, zoneId),
-                )
-            },
+            noNumbers = numbers.isEmpty(),
+            calls = bridge.recents(CALL_LIMIT).map { HomeCallRow(it, TimeText.label(it.timeMillis, nowMillis, zoneId)) },
         )
     }
+
+    /** Call back, from the number the call was on (AGENTS §6). Returns the (fromId, dial) pair. */
+    fun callBackTarget(row: HomeCallRow): Pair<String, String> = row.recent.numberId to row.recent.peerUri
+
+    fun delete(row: HomeCallRow) = bridge.deleteRecent(row.recent)
 
     /**
      * Contacts at startup (AGENTS §7): ask once, as soon as the phone service is up (so the
@@ -51,6 +49,7 @@ class HomeViewModel(
     }
 
     companion object {
-        const val RECENT_LIMIT = 8
+        /** Rows are plain views, so the log is capped: the newest 200 calls. */
+        const val CALL_LIMIT = 200
     }
 }

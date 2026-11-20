@@ -49,6 +49,10 @@ data class RecentUi(
     /** When it was answered (null if never) and when it ended: together they identify the entry to delete. */
     val startMillis: Long? = null,
     val stopMillis: Long = 0L,
+    /** Where the number is from ("Ohio"), when it's a phone number. */
+    val place: Place? = null,
+    /** True when the number is one of the phone's contacts. */
+    val inContacts: Boolean = false,
 )
 
 /** One of a contact's numbers or SIP addresses. */
@@ -92,6 +96,8 @@ data class CallUi(
     val numberId: String = "",
     /** A phone (SIM) call, run through upstream while BusyCall is the phone's dialer. */
     val isSim: Boolean = false,
+    /** Where the caller's number is from ("Ohio"), when it's a phone number. */
+    val place: Place? = null,
 )
 
 /** The phone's SIM as a way to call, while BusyCall is the default phone app. */
@@ -234,9 +240,9 @@ interface Bridge {
     /** The park number of number [numberId] (empty: no Park). */
     fun parkNumber(numberId: String): String
 
-    fun answer(activity: Activity, callId: Long)
-    fun decline(activity: Activity, callId: Long)
-    fun hangup(activity: Activity, callId: Long)
+    fun answer(ctx: android.content.Context, callId: Long)
+    fun decline(ctx: android.content.Context, callId: Long)
+    fun hangup(ctx: android.content.Context, callId: Long)
     /** Sends one keypad tone (0-9, *, #) on the call. */
     fun sendDigit(callId: Long, digit: Char)
     fun isMuted(): Boolean
@@ -264,6 +270,18 @@ interface Bridge {
 
     /** Contacts, sorted by name (favourites first, as upstream sorts them). */
     fun contacts(): List<ContactUi>
+
+    /** The phone contact with this number, as a `content://` lookup URI to open, or null. */
+    fun contactUri(ctx: android.content.Context, peerUri: String): String?
+
+    /**
+     * True while BusyCall's END-key service keeps the app alive: upstream then shows no status
+     * notification (UPSTREAM.md). False brings the notification back.
+     */
+    fun setKeptAlive(alive: Boolean)
+
+    /** Where a number is from (area code / country code), or null. */
+    fun placeOf(peerUri: String): Place?
 
     /** Deletes one call-log entry. */
     fun deleteRecent(recent: RecentUi)

@@ -81,7 +81,8 @@ app/src/main/kotlin/
     │                        plain Kotlin types: NumberStatus, CallUi, ContactUi.
     ├── keys/                KeyRouter: the ONLY place that reads keycodes and scan codes
     ├── ui/                  FlipBaseActivity, footer, SystemBars, focus drawables, menus
-    ├── home/ dialer/ contacts/ call/ calllog/ numbers/ settings/
+    ├── home/ dialer/ contacts/ call/ calllog/ numbers/ settings/ blocking/
+    │                        home/ is also the call log; calllog/ holds Call details
     └── update/              Self-update from GitHub Releases (from FlipWeather)
 distribution/                libbaresip static libs + headers. Not in git: downloaded by
                              gradle/native-libs.gradle.kts from the release that
@@ -114,7 +115,7 @@ Rules:
 |---|---|
 | Left softkey = primary action | **Options is the only softkey.** Right by default, left after the first MENU press. The other softkey has no label and no job (consume it, do nothing). |
 | Hide the system navigation bar on every screen | Hide it on **keypad** phones. On a phone with **no hardware number keys** (`configuration.keyboard != KEYBOARD_12KEY`), leave it visible: it's their only Back. |
-| Unhandled CALL/END reach `super` | **CALL** is handled on the Dialer, Contacts, Recents, Call log and call screens; elsewhere it reaches `super`. **END always reaches `super`**: on a call screen we hang up/decline first, then pass it on (PLAN §3.4). |
+| Unhandled CALL/END reach `super` | **CALL** is handled on the Dialer, Contacts, Home (the call log), Call details and call screens; elsewhere it reaches `super`. **END always reaches `super`**: on a call screen we hang up/decline first, then pass it on (PLAN §3.4). |
 
 Do not add a fourth without the owner's say-so, recorded here.
 
@@ -157,7 +158,14 @@ The full key table is `PLAN.md §3.1`. In code:
   every screen until the call ends; OK on that bar returns to the call.
 - **END:** if a call is ringing or active, decline/hang up on DOWN, then
   `return super.dispatchKeyEvent(event)` for both DOWN and UP. Never consume
-  END, never relaunch the app after it. Outside a call, don't look at END.
+  END. Outside a call, don't look at END.
+- **END with our calls goes through `keys/EndKeyService`** (owner, 2026-11-20). Upstream's
+  calls are Telecom self-managed, so Android doesn't count them as "in call" and handles END
+  itself (Home): the app never sees it. The accessibility service does: ringing → decline; on
+  the In call screen → hang up; anywhere else during a call → the In call screen comes back
+  after Android's Home (the one time BusyCall reopens after END). Decisions in the pure
+  `EndKeyDecision`. It never consumes the key. While it runs, upstream's status notification is
+  off (`Bridge.setKeptAlive`, UPSTREAM.md); turning it off brings the notification back.
 - **On-screen keypad:** only on phones with no hardware number keys (§3). On a
   keypad phone the Dialer never draws it.
 - **Outer END / outer Speaker** (scan codes in the guide's `docs/keys.md`): act
@@ -182,7 +190,7 @@ The full key table is `PLAN.md §3.1`. In code:
 - Outgoing calls (owner, 2026-11-20): a **new call** (Dialer, Contacts) opens the
   **Call from…** picker on a short OK/CALL and uses the ★ default on a held OK/CALL
   (no picker with only one way to call; there is no ◀ ▶ Call-from row). A **call-back**
-  (Recents, Call log) uses the number the call came in on, with no picker.
+  (Home's call log, Call details) uses the number the call came in on, with no picker.
 - An account that isn't registered is shown as such everywhere it appears, with
   the reason in plain words and Retry (guide §7). Never hide it.
 - Name numbers by the user's label ("Office") first, the extension or number second.
@@ -319,7 +327,8 @@ Test on a 240×320 mdpi emulator with touch off, then on the real phone (guide c
   ring's red centre).
 - **Putting on-screen actions in Options**, or bringing back an Options menu in a call.
 - **Consuming END** or bringing the app back after it. Hang up, then let the
-  system do what END does (usually Home).
+  system do what END does (usually Home). The one exception: END in another app during a call
+  brings the call screen back (`keys/EndKeyService`, owner's decision).
 - **Leaving the app after the on-screen End button.** Only the END key leaves;
   the button returns to the previous screen (or to the other call, with two).
 - **Hanging up on BACK.**

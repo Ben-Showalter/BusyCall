@@ -16,24 +16,25 @@ keys show "Unhandled key N (scan M)". Actions fire on key UP.
 Menus and confirmations are `AlertDialog`s drawn as a rounded dark card with an accent title
 (and an optional question under it); the selected row gets the focus ring, drawn behind its text.
 
-## S1 Home (`home/HomeActivity`) — launcher
-- **Shows:** "My numbers": each number as `Name · extension` with a status dot and either its
-  voicemail count or status. "Recent": the last 8 calls, `Name` (red if missed) and
-  `Missed/Incoming/Outgoing · to/from <number> · <time>`.
+## S1 Home (`home/HomeActivity`) — launcher, and the call log
+Home **is** the call log (owner, 2026-11-20); there is no separate Call log screen.
+- **Shows:** every call (the newest 200), newest first. Each row (min 52 dp): a **phone icon with
+  an arrow**, green ↙ incoming, green ↗ outgoing, red ↙ missed (the name is red too); the name;
+  `Ohio · to Office · 9:42` (where the number is from, which of your numbers, when). "No calls
+  yet. Type a number to call." when empty.
+- **Above the log, only when needed:** a red row for each number that **can't connect**
+  ("Office · 104 can't connect" / the reason in plain words, or "OK to try again"): OK opens Edit
+  for a refused password, else retries. No numbers at all: one "+ Add a number" row.
 - **Problems:** "Starting the phone service…" until baresip is up; if permissions were refused,
   a plain message and **Retry**.
-- **Keys:** 0–9 `*` `#` open the Dialer (S2) with that digit. CALL or OK on a recent calls back,
-  from the number the call was on. OK on a number: Edit if the password was refused, Retry if
-  it has no connection, else Numbers.
-- **Why it can't connect (S10):** under a number with no connection, in red: "Wrong extension
-  or password — OK to check it" (401/403/407), "The server isn't answering" (408/timeout),
-  "Can't find the server: check its address" (DNS), "No internet connection", or "Can't
-  connect: <server's reason>".
-- **Options:** Contacts · Call log · Numbers · Classic screens (temporary) · Settings.
-- **Empty:** one "+ Add a number" row.
-- **Contacts:** once the phone service is up on first start, Android's contacts prompt appears
-  by itself (asked once ever). Allowed: contacts are switched on. Refused: a toast with the
-  Settings path; Contacts › Allow contacts remains.
+- **Keys:** 0–9 `*` `#` open the Dialer (S2) with that digit. **OK on a call → Call details.
+  CALL, or holding OK, calls back** from the number the call was on (no picker).
+- **Options:** Contacts · Blocked calls · Numbers · Classic screens (temporary) · Settings.
+- **At first start, one at a time:** the microphone, then contacts (Android's prompt, asked once
+  ever; refused: a toast with the Settings path), then **END key and staying ready** (a card
+  "Let the END key end calls, and keep BusyCall ready without a notification?" · Open settings →
+  Android's Accessibility settings with "Choose Call END key, then switch it on"). Asked once.
+- Android's "show call log" (other apps, the stock launcher) opens Home.
 
 ## S7 Numbers (`numbers/NumbersActivity`)
 - **Shows:** hint "★ = the number the Dialer calls from"; each number `★ Name · ext` (★ on the
@@ -104,7 +105,11 @@ Menus and confirmations are `AlertDialog`s drawn as a rounded dark card with an 
   "Switch back to the phone's dialer" → Android's default apps screen.
 - While on: Call from… lists **Phone (SIM)** ("Mobile network" / "No mobile service") as a real
   number; SIM calls ring on S4 and run on S5 (no Call options on ▼); the phone's own dial requests
-  (home-screen digits, `tel:` links) open S2 with the number, and the call-log view opens S6.
+  (home-screen digits, `tel:` links) open S2 with the number, and the call-log view opens S1.
+- **END key and staying ready:** "On: END ends calls; no notification" / "Off: END only goes home
+  during a call". OK opens Android's Accessibility settings (off: after the card explaining it).
+  While on, END declines a ringing call, hangs up on the In call screen, and brings the In call
+  screen back from any other app; BusyCall shows no status notification.
 - Options key: Right/Left softkey (OK toggles). About: baresip-studio and license notice.
 
 ## S2 Dialer (`dialer/DialerActivity`)
@@ -142,13 +147,16 @@ Menus and confirmations are `AlertDialog`s drawn as a rounded dark card with an 
   mode "both"). Refused: a toast with the Settings path. Also asked once at first start (S1).
 - **Options:** Allow contacts (when off).
 
-## S6 Call log (`calllog/CallLogActivity`)
-- **Shows:** the last 200 calls, newest first: `Name` (red if missed) /
-  `Missed/Incoming/Outgoing · to/from <number> · <time>`. "No calls yet." when empty.
-- **Keys:** CALL calls back from the number the call was on (no picker). OK / tap: Call back ·
-  Call from… (opens the Dialer with the number) · Delete.
-- **Options:** Call back · Delete, for the focused call. The row menu also has **Block this
-  number** (your blocked list; applies when the number's Block calls isn't Off).
+## S6 Call details (`calllog/CallDetailsActivity`) — OK on a Home call
+- **Shows:** name (red if missed), number `(378) 234-3189`, `Missed · to Office · Mon 9:42`,
+  **"Number from Ohio"** and a **small map** (US + Canada outlines, Ohio filled, a dot at its
+  centre; other countries: the name only, no map). The area code says where the number was
+  issued, not where the caller is.
+- **Call back** (green, focused; CALL does the same) · **Add to contacts** (phone numbers not in
+  contacts: **New contact** = Android's contact editor with the number filled in · **Add to a
+  contact…** = pick a contact, the number is added) or **Open contact** (already a contact) ·
+  **Block this number** · **Delete**. BACK returns to Home. Contacts off: "Contacts are off —
+  Options › Allow contacts".
 
 ## Blocked calls (`blocking/BlockedActivity`) — Home › Options › Blocked calls
 - **Shows:** each blocked call, newest first: name/number / `reason · to <number> · <time>`
@@ -160,7 +168,8 @@ Menus and confirmations are `AlertDialog`s drawn as a rounded dark card with an 
 ## S4 Incoming call (`call/IncomingCallActivity`)
 - Opens by itself in front of any app when a call rings (one hook line in upstream's
   `handleIncomingCall` → `CallRouter.onIncomingCall`; Android 10+ also needs "Appear on top"),
-  and from upstream's ring notification, over the lock screen and a closed flip. **Shows:** "to Office · 104", caller name, number (`(378) 234-3189`); **Answer**
+  and from upstream's ring notification, over the lock screen and a closed flip. **Shows:** "to Office · 104", caller name, number (`(378) 234-3189`), where the number
+  is from ("Ohio") with a 72 dp map (portrait and normal font sizes only); **Answer**
   (green, focused), **Decline** (red); hint "CALL answers · END declines · BACK silences".
 - **Keys:** CALL / headset = answer → S5. END = decline, then the system's own END action.
   Outer END = decline. BACK = silence the ringer only.

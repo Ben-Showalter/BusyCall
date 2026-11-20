@@ -9,6 +9,7 @@ import com.busycall.app.bridge.SaveProblem
 import com.busycall.app.bridge.SaveResult
 import com.busycall.app.bridge.Transport
 import com.busycall.app.home.HomeProblem
+import com.busycall.app.home.CallIcon
 import com.busycall.app.home.HomeViewModel
 import com.busycall.app.numbers.NumberAction
 import com.busycall.app.numbers.NumberSetupViewModel
@@ -19,6 +20,7 @@ import com.busycall.app.numbers.setup.SetupCodeParser
 import com.busycall.app.ui.TimeLabel
 import com.busycall.app.ui.TimeText
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -43,20 +45,31 @@ class ViewModelsTest {
         assertEquals(HomeProblem.PermissionsDenied, vm.state().problem)
     }
 
-    @Test fun `home lists numbers with the first as default, and recent calls with times`() {
+    @Test fun `home is the call log, with only the numbers that can't connect above it`() {
         val zone = ZoneId.of("America/New_York")
         val now = ZonedDateTime.of(2026, 11, 4, 12, 0, 0, 0, zone).toInstant().toEpochMilli()
-        val bridge = FakeBridge(
-            numbers = mutableListOf(office, school),
-            recents = mutableListOf(RecentUi("Mom", "sip:5550142@pbx", "Home", "sip:5550142@pbx;transport=udp", CallDirection.In, true, now - 10 * 60_000)),
-        )
-        val state = HomeViewModel(bridge, now = { now }, zone = { zone }).state()
+        val missed = RecentUi("Mom", "sip:5550142@pbx", "Home", "sip:5550142@pbx;transport=udp", CallDirection.In, true, now - 10 * 60_000)
+        val incoming = missed.copy(peerName = "Anna", missed = false)
+        val outgoing = missed.copy(peerName = "Desk", direction = CallDirection.Out, missed = false)
+        val bridge = FakeBridge(numbers = mutableListOf(office, school), recents = mutableListOf(missed, incoming, outgoing))
+        val vm = HomeViewModel(bridge, now = { now }, zone = { zone })
+        val state = vm.state()
         assertNull(state.problem)
-        assertEquals(listOf("Office", "School"), state.numbers.map { it.label })
-        assertTrue(state.numbers[0].isDefault)
-        assertEquals(2, state.numbers[0].voicemailNew)
-        assertEquals(TimeLabel.MinutesAgo(10), state.recents.single().time)
-        assertTrue(state.recents.single().missed)
+        assertEquals(listOf("School"), state.trouble.map { it.label })
+        assertFalse(state.noNumbers)
+        assertEquals(TimeLabel.MinutesAgo(10), state.calls[0].time)
+        assertEquals(listOf(CallIcon.Missed, CallIcon.In, CallIcon.Out), state.calls.map { it.icon })
+        assertEquals(missed.numberId to missed.peerUri, vm.callBackTarget(state.calls[0]))
+        vm.delete(state.calls[0])
+        assertEquals(listOf(missed), bridge.deletedRecents)
+        assertEquals(2, vm.state().calls.size)
+    }
+
+    @Test fun `home with every number connected shows no number rows, and with none offers to add one`() {
+        assertTrue(HomeViewModel(FakeBridge(numbers = mutableListOf(office))).state().trouble.isEmpty())
+        val empty = HomeViewModel(FakeBridge()).state()
+        assertTrue(empty.noNumbers)
+        assertTrue(empty.calls.isEmpty())
     }
 
     // ---- Numbers ----
